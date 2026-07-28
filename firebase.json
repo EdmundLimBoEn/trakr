@@ -1,0 +1,30 @@
+{
+  "functions": {
+    "source": "firebase/functions",
+    "runtime": "nodejs22",
+    "predeploy": [
+      "bun run --cwd firebase/functions check",
+      "bun run --cwd firebase/functions test"
+    ]
+  },
+  "firestore": {
+    "rules": "firebase/firestore.rules",
+    "indexes": "firebase/firestore.indexes.json"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProjectMode": true
+  }
+}

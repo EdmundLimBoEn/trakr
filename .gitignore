@@ -2,4 +2,8 @@
 DerivedData/
 *.xcuserstate
 xcuserdata/
-
+node_modules/
+firebase/functions/lib/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
