@@ -41,6 +41,7 @@ struct CheckoutView: View {
                                 Text(item.title).tag(Optional(item))
                             }
                         }
+                        .accessibilityIdentifier("condition-picker")
                         if condition == .hasIssue {
                             Text("Select every affected item and add a short description.")
                                 .font(.caption)
@@ -62,6 +63,7 @@ struct CheckoutView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("add-demo-equipment")
                 } footer: {
                     if !store.isOnline {
                         Label("Connect to the internet before scanning.", systemImage: "wifi.slash")
@@ -84,9 +86,10 @@ struct CheckoutView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
-                    .disabled(condition == nil)
+                    .disabled(!canConfirm)
                     .padding()
                     .background(.ultraThinMaterial)
+                    .accessibilityIdentifier("confirm-checkout")
                 }
             }
             .sheet(item: $receipt) { receipt in
@@ -134,9 +137,19 @@ struct CheckoutView: View {
             }
         }
         do {
-            receipt = try store.confirmCheckout(items: submitted, requestID: requestID)
+            receipt = try store.confirmCheckout(items: submitted, condition: condition, requestID: requestID)
         } catch {
             self.error = error
+        }
+    }
+
+    private var canConfirm: Bool {
+        guard let condition else { return false }
+        if condition == .noIssues { return true }
+        let affected = staged.filter(\.hasIssue)
+        return !affected.isEmpty && affected.allSatisfy {
+            let text = $0.issueText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !text.isEmpty && text.count <= 500
         }
     }
 }
@@ -205,10 +218,10 @@ private struct CheckoutReceiptView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("receipt-done")
             }
             .padding(24)
             .interactiveDismissDisabled()
         }
     }
 }
-

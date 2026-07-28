@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1B227AA81A3D3976AB6AC2B2 /* EquipmentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F7DBBE79F0F76EC6A84B0C /* EquipmentListView.swift */; };
+		2E9893C3FBFE94B21D971C0D /* GearGuardUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF39C3A1E03EB426CF936C65 /* GearGuardUITests.swift */; };
 		3D349DD7E09BE0E3B4A3ED61 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ADF35B7E148EA3A3E113EEE0 /* Assets.xcassets */; };
 		6F80703AEA1E73BD69195631 /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDEEEED7A0D59B5A476C8F6 /* Domain.swift */; };
 		82709F954A3051FB0D560977 /* GearGuardTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D8A211188D2825A12E326A /* GearGuardTheme.swift */; };
@@ -17,6 +18,8 @@
 		97B5F0D4151FA676C6A702A5 /* GearGuardStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CE12ACC65BAF00EC818359 /* GearGuardStore.swift */; };
 		9DEF069E841412279A4FD466 /* GearGuardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B2EDABEA189FAE6D67E21E /* GearGuardApp.swift */; };
 		AEBBE605FDBCEBF03962E60A /* PersistedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A370F1C739B7B241FD1ABB /* PersistedStore.swift */; };
+		D2790F6EB3C89441A5A2830F /* ConnectivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A65004934442267BC1584AF /* ConnectivityMonitor.swift */; };
+		D7566ADDD18C633B32D57625 /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D95BB83788AAA8BE5E520B19 /* ActivityView.swift */; };
 		D9A1AD8FAC9E392919CA7EA4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFE4053B20722A65C3F10BA7 /* HomeView.swift */; };
 		EC0FF780329AAC59016DB865 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7C8DF0C75BA15F6ED51219 /* HistoryView.swift */; };
 		EEE6861A2C8B75ACC8A116DE /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E1AD9063FFEB4D45171AA2B /* SignInView.swift */; };
@@ -31,10 +34,18 @@
 			remoteGlobalIDString = 2068665784CFC2079C3E73F6;
 			remoteInfo = GearGuard;
 		};
+		CDDAC3B5D2E9E9C4EE39476C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E9C9C2F8447225C745BA0C3C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2068665784CFC2079C3E73F6;
+			remoteInfo = GearGuard;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		0C2A583581E6637A548DFBB7 /* GearGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GearGuardTests.swift; sourceTree = "<group>"; };
+		1A65004934442267BC1584AF /* ConnectivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityMonitor.swift; sourceTree = "<group>"; };
 		2A12C1D3E6229E5387296F8C /* GearGuard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GearGuard.entitlements; sourceTree = "<group>"; };
 		428755FA362D9417A0AD60D2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4BDEEEED7A0D59B5A476C8F6 /* Domain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Domain.swift; sourceTree = "<group>"; };
@@ -42,14 +53,17 @@
 		65CE12ACC65BAF00EC818359 /* GearGuardStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GearGuardStore.swift; sourceTree = "<group>"; };
 		78F7DBBE79F0F76EC6A84B0C /* EquipmentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentListView.swift; sourceTree = "<group>"; };
 		79A370F1C739B7B241FD1ABB /* PersistedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedStore.swift; sourceTree = "<group>"; };
+		7C997620AF02E7F82BB40519 /* GearGuardUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GearGuardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A7C8DF0C75BA15F6ED51219 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		A42F785AE20D1D67196A083D /* GearGuard.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GearGuard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4D8A211188D2825A12E326A /* GearGuardTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GearGuardTheme.swift; sourceTree = "<group>"; };
 		ADF35B7E148EA3A3E113EEE0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B95A576078E6093EFB22A060 /* CheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutView.swift; sourceTree = "<group>"; };
 		BDFB761F8B341A585AACB47D /* GearGuardTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GearGuardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF39C3A1E03EB426CF936C65 /* GearGuardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GearGuardUITests.swift; sourceTree = "<group>"; };
 		C7B2EDABEA189FAE6D67E21E /* GearGuardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GearGuardApp.swift; sourceTree = "<group>"; };
 		D3690E115BCE623028E4797C /* ReturnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnView.swift; sourceTree = "<group>"; };
+		D95BB83788AAA8BE5E520B19 /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		DFB4811B30192BC9A6C69766 /* NFCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCService.swift; sourceTree = "<group>"; };
 		FFE4053B20722A65C3F10BA7 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -58,6 +72,7 @@
 		1AD63ED11661A377860D10AC /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				1A65004934442267BC1584AF /* ConnectivityMonitor.swift */,
 				65CE12ACC65BAF00EC818359 /* GearGuardStore.swift */,
 				79A370F1C739B7B241FD1ABB /* PersistedStore.swift */,
 			);
@@ -107,6 +122,7 @@
 			children = (
 				7CE4A5821499B4B2769C5CDA /* GearGuard */,
 				CC5E1958ED372E1134E8895B /* GearGuardTests */,
+				807333412023D166692097C5 /* GearGuardUITests */,
 				DBDEAAB70164811EABA9A6EF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -140,6 +156,14 @@
 				1AD63ED11661A377860D10AC /* Services */,
 			);
 			path = GearGuard;
+			sourceTree = "<group>";
+		};
+		807333412023D166692097C5 /* GearGuardUITests */ = {
+			isa = PBXGroup;
+			children = (
+				BF39C3A1E03EB426CF936C65 /* GearGuardUITests.swift */,
+			);
+			path = GearGuardUITests;
 			sourceTree = "<group>";
 		};
 		9FEDBAAE9B6F121C3F0DD14C /* App */ = {
@@ -195,6 +219,7 @@
 			children = (
 				A42F785AE20D1D67196A083D /* GearGuard.app */,
 				BDFB761F8B341A585AACB47D /* GearGuardTests.xctest */,
+				7C997620AF02E7F82BB40519 /* GearGuardUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -202,6 +227,7 @@
 		F54EA6B2AC7FD206EFDE0BFC /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				D95BB83788AAA8BE5E520B19 /* ActivityView.swift */,
 				FFE4053B20722A65C3F10BA7 /* HomeView.swift */,
 			);
 			path = Home;
@@ -246,6 +272,24 @@
 			productReference = BDFB761F8B341A585AACB47D /* GearGuardTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		904665DB43628C09D74B79FD /* GearGuardUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7CC37833235F7DDACEDE5F62 /* Build configuration list for PBXNativeTarget "GearGuardUITests" */;
+			buildPhases = (
+				BBF2A170F428F1198FADFBC4 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				18F3AA5E122113B74841E348 /* PBXTargetDependency */,
+			);
+			name = GearGuardUITests;
+			packageProductDependencies = (
+			);
+			productName = GearGuardUITests;
+			productReference = 7C997620AF02E7F82BB40519 /* GearGuardUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -262,6 +306,11 @@
 					7533D5413CC7630825269711 = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
+					};
+					904665DB43628C09D74B79FD = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = 2068665784CFC2079C3E73F6;
 					};
 				};
 			};
@@ -281,6 +330,7 @@
 			targets = (
 				2068665784CFC2079C3E73F6 /* GearGuard */,
 				7533D5413CC7630825269711 /* GearGuardTests */,
+				904665DB43628C09D74B79FD /* GearGuardUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -309,7 +359,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D7566ADDD18C633B32D57625 /* ActivityView.swift in Sources */,
 				96ABF4DD3B712ADE34F0A114 /* CheckoutView.swift in Sources */,
+				D2790F6EB3C89441A5A2830F /* ConnectivityMonitor.swift in Sources */,
 				6F80703AEA1E73BD69195631 /* Domain.swift in Sources */,
 				1B227AA81A3D3976AB6AC2B2 /* EquipmentListView.swift in Sources */,
 				9DEF069E841412279A4FD466 /* GearGuardApp.swift in Sources */,
@@ -324,9 +376,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBF2A170F428F1198FADFBC4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2E9893C3FBFE94B21D971C0D /* GearGuardUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		18F3AA5E122113B74841E348 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2068665784CFC2079C3E73F6 /* GearGuard */;
+			targetProxy = CDDAC3B5D2E9E9C4EE39476C /* PBXContainerItemProxy */;
+		};
 		E8E30909D913F43A08167E45 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 2068665784CFC2079C3E73F6 /* GearGuard */;
@@ -452,6 +517,22 @@
 			};
 			name = Debug;
 		};
+		3EC17AE8C4B19C9F93180912 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.GearGuardUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GearGuard;
+			};
+			name = Debug;
+		};
 		8E472DB54929E61C2ED56A5E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -468,6 +549,22 @@
 				PRODUCT_NAME = GearGuard;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		C9BFDDE3A39DA20ABFC70539 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.GearGuardUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = GearGuard;
 			};
 			name = Release;
 		};
@@ -533,6 +630,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7CC37833235F7DDACEDE5F62 /* Build configuration list for PBXNativeTarget "GearGuardUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3EC17AE8C4B19C9F93180912 /* Debug */,
+				C9BFDDE3A39DA20ABFC70539 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		8D91106A9B79579AB234703C /* Build configuration list for PBXNativeTarget "GearGuardTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

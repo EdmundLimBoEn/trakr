@@ -5,10 +5,16 @@ final class GearGuardStore: ObservableObject {
     @Published private(set) var currentUser: GearUser?
     @Published private(set) var equipment: [Equipment]
     @Published private(set) var claims: [Claim]
+    @Published private(set) var issues: [EquipmentIssue]
+    @Published private(set) var notifications: [GearNotification]
     @Published private(set) var auditEvents: [AuditEvent]
-    @Published var isOnline = true
+    @Published private(set) var isNetworkReachable = true
+    @Published var simulateOffline = false
+
+    var isOnline: Bool { isNetworkReachable && !simulateOffline }
 
     private var requestResults: [String: String]
+    private var inactiveTagIDs: Set<String>
     private let persistence: SnapshotPersisting
 
     init(persistence: SnapshotPersisting = UserDefaultsSnapshotPersistence()) {
@@ -16,7 +22,10 @@ final class GearGuardStore: ObservableObject {
         let snapshot = persistence.load() ?? Self.seedSnapshot
         equipment = snapshot.equipment
         claims = snapshot.claims
+        issues = snapshot.issues
+        notifications = snapshot.notifications
         auditEvents = snapshot.auditEvents
+        inactiveTagIDs = snapshot.inactiveTagIDs
         requestResults = snapshot.requestResults
     }
 
@@ -27,21 +36,44 @@ final class GearGuardStore: ObservableObject {
             .replacingOccurrences(of: ".", with: " ")
             .capitalized ?? role.title
         currentUser = GearUser(id: "local-\(email)", email: email, displayName: name, role: role)
+        processOverdue()
     }
 
     func useDemo(role: UserRole) {
         let email = role == .teacher ? "teacher@sst.edu.sg" : "alex@students.ssts.edu.sg"
         currentUser = GearUser(id: "demo-\(role.rawValue)", email: email, displayName: role == .teacher ? "Ms Tan" : "Alex Lim", role: role)
+        processOverdue()
     }
 
     func signOut() {
         currentUser = nil
     }
 
+    func setNetworkReachable(_ reachable: Bool) {
+        isNetworkReachable = reachable
+    }
+
+    func resetDemoData() {
+        let snapshot = Self.seedSnapshot
+        currentUser = nil
+        equipment = snapshot.equipment
+        claims = snapshot.claims
+        issues = snapshot.issues
+        notifications = snapshot.notifications
+        auditEvents = snapshot.auditEvents
+        inactiveTagIDs = snapshot.inactiveTagIDs
+        requestResults = snapshot.requestResults
+        simulateOffline = false
+        persist()
+    }
+
     func resolve(tagID: String) throws -> Equipment {
         try requireOnline()
         guard TagCodec.isValid(tagID) else { throw GearGuardError.invalidTagPayload }
-        guard let item = equipment.first(where: { $0.tagID == tagID }) else { throw GearGuardError.unknownTag }
+        guard let item = equipment.first(where: { $0.tagID == tagID }) else {
+            if inactiveTagIDs.contains(tagID) { throw GearGuardError.inactiveTag }
+            throw GearGuardError.unknownTag
+        }
         guard item.isActive else { throw GearGuardError.inactiveTag }
         return item
     }
@@ -57,15 +89,30 @@ final class GearGuardStore: ObservableObject {
         return visible.sorted { $0.checkedOutAt > $1.checkedOutAt }
     }
 
+    func notifications(for user: GearUser) -> [GearNotification] {
+        notifications
+            .filter {
+                $0.recipientRole == user.role
+                    && ($0.recipientUserID == nil || $0.recipientUserID == user.id)
+            }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func issues(status: IssueStatus? = nil) -> [EquipmentIssue] {
+        issues
+            .filter { status == nil || $0.status == status }
+            .sorted { $0.reportedAt > $1.reportedAt }
+    }
+
     @discardableResult
     func enroll(name: String, serial: String, tagID: String, hardwareUID: String) throws -> Equipment {
         _ = try requireTeacher()
         try requireOnline()
         let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanSerial = serial.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanName.isEmpty, !cleanSerial.isEmpty else { throw GearGuardError.invalidEmail }
+        try validate(name: cleanName, serial: cleanSerial)
         guard TagCodec.isValid(tagID) else { throw GearGuardError.invalidTagPayload }
-        guard !equipment.contains(where: { $0.tagID == tagID && $0.isActive }) else { throw GearGuardError.duplicateTag }
+        guard !equipment.contains(where: { $0.tagID == tagID }) && !inactiveTagIDs.contains(tagID) else { throw GearGuardError.duplicateTag }
         guard !equipment.contains(where: { $0.internalSerial.caseInsensitiveCompare(cleanSerial) == .orderedSame && $0.isActive }) else {
             throw GearGuardError.duplicateSerial
         }
@@ -84,17 +131,59 @@ final class GearGuardStore: ObservableObject {
         return item
     }
 
-    func confirmCheckout(items: [StagedCheckoutItem], requestID: String) throws -> CheckoutReceipt {
+    @discardableResult
+    func updateEquipment(id: String, name: String, serial: String, isActive: Bool) throws -> Equipment {
+        let teacher = try requireTeacher()
+        try requireOnline()
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanSerial = serial.trimmingCharacters(in: .whitespacesAndNewlines)
+        try validate(name: cleanName, serial: cleanSerial)
+        guard !equipment.contains(where: {
+            $0.id != id && $0.internalSerial.caseInsensitiveCompare(cleanSerial) == .orderedSame && $0.isActive
+        }) else { throw GearGuardError.duplicateSerial }
+        guard let index = equipment.firstIndex(where: { $0.id == id }) else { throw GearGuardError.unknownTag }
+        equipment[index].name = cleanName
+        equipment[index].internalSerial = cleanSerial
+        equipment[index].isActive = isActive
+        auditEvents.append(AuditEvent(id: UUID().uuidString, kind: .equipmentUpdated, actorID: teacher.id, equipmentIDs: [id], claimIDs: [], createdAt: .now))
+        persist()
+        return equipment[index]
+    }
+
+    @discardableResult
+    func replaceTag(equipmentID: String, tagID: String, hardwareUID: String) throws -> Equipment {
+        let teacher = try requireTeacher()
+        try requireOnline()
+        guard TagCodec.isValid(tagID) else { throw GearGuardError.invalidTagPayload }
+        guard !equipment.contains(where: { $0.id != equipmentID && $0.tagID == tagID }) && !inactiveTagIDs.contains(tagID) else { throw GearGuardError.duplicateTag }
+        guard let index = equipment.firstIndex(where: { $0.id == equipmentID }) else { throw GearGuardError.unknownTag }
+        inactiveTagIDs.insert(equipment[index].tagID)
+        equipment[index].tagID = tagID
+        equipment[index].hardwareUID = hardwareUID
+        equipment[index].isActive = true
+        auditEvents.append(AuditEvent(id: UUID().uuidString, kind: .tagReplaced, actorID: teacher.id, equipmentIDs: [equipmentID], claimIDs: [], createdAt: .now))
+        persist()
+        return equipment[index]
+    }
+
+    func confirmCheckout(items: [StagedCheckoutItem], condition: ItemCondition, requestID: String) throws -> CheckoutReceipt {
         let user = try requireStudent()
         try requireOnline()
         guard !items.isEmpty else { throw GearGuardError.emptyBatch }
-        guard items.count <= 20 else { throw GearGuardError.emptyBatch }
-        guard items.allSatisfy({ !$0.hasIssue || !$0.issueText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+        guard items.count <= 20 else { throw GearGuardError.batchTooLarge }
+        let affected = items.filter(\.hasIssue)
+        guard condition != .hasIssue || !affected.isEmpty else { throw GearGuardError.invalidIssue }
+        guard condition != .noIssues || affected.isEmpty else { throw GearGuardError.invalidIssue }
+        guard affected.allSatisfy({
+            let text = $0.issueText.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !text.isEmpty && text.count <= 500
+        }) else {
             throw GearGuardError.invalidIssue
         }
         if let batchID = requestResults[requestID] {
-            let IDs = claims.filter { $0.checkoutBatchID == batchID }.map(\.equipmentID)
-            return CheckoutReceipt(id: batchID, equipment: equipment.filter { IDs.contains($0.id) }, timestamp: claims.first(where: { $0.checkoutBatchID == batchID })?.checkedOutAt ?? .now)
+            let existingClaims = claims.filter { $0.checkoutBatchID == batchID }
+            let IDs = existingClaims.map(\.equipmentID)
+            return CheckoutReceipt(id: batchID, equipment: equipment.filter { IDs.contains($0.id) }, claimIDs: existingClaims.map(\.id), timestamp: existingClaims.first?.checkedOutAt ?? .now)
         }
         let batchID = UUID().uuidString
         let now = Date.now
@@ -113,30 +202,88 @@ final class GearGuardStore: ObservableObject {
             )
         }
         claims.append(contentsOf: newClaims)
+        let newIssues = zip(newClaims, items).compactMap { pair -> EquipmentIssue? in
+            let (claim, item) = pair
+            guard item.hasIssue else { return nil }
+            return EquipmentIssue(
+                id: UUID().uuidString,
+                claimID: claim.id,
+                equipmentID: item.equipment.id,
+                reportedByStudentID: user.id,
+                reportedByStudentEmail: user.email,
+                text: item.issueText.trimmingCharacters(in: .whitespacesAndNewlines),
+                status: .open,
+                reportedAt: now
+            )
+        }
+        issues.append(contentsOf: newIssues)
+        notifications.append(GearNotification(
+            id: UUID().uuidString,
+            kind: .checkout,
+            recipientRole: .student,
+            recipientUserID: user.id,
+            title: "Equipment checked out",
+            message: "\(items.count) \(items.count == 1 ? "item" : "items") checked out successfully.",
+            equipmentIDs: items.map(\.equipment.id),
+            claimID: nil,
+            createdAt: now,
+            isRead: false
+        ))
+        for issue in newIssues {
+            notifications.append(GearNotification(
+                id: UUID().uuidString,
+                kind: .issue,
+                recipientRole: .teacher,
+                recipientUserID: nil,
+                title: "Equipment issue reported",
+                message: "A student reported an issue requiring review.",
+                equipmentIDs: [issue.equipmentID],
+                claimID: issue.claimID,
+                createdAt: now,
+                isRead: false
+            ))
+        }
         requestResults[requestID] = batchID
         auditEvents.append(AuditEvent(id: UUID().uuidString, kind: .checkoutConfirmed, actorID: user.id, equipmentIDs: items.map(\.equipment.id), claimIDs: newClaims.map(\.id), createdAt: now))
         persist()
-        return CheckoutReceipt(id: batchID, equipment: items.map(\.equipment), timestamp: now)
+        return CheckoutReceipt(id: batchID, equipment: items.map(\.equipment), claimIDs: newClaims.map(\.id), timestamp: now)
     }
 
     @discardableResult
-    func confirmReturn(items: [ReturnCandidate], requestID: String) throws -> Int {
+    func confirmReturn(items: [ReturnCandidate], requestID: String) throws -> ReturnReceipt {
         let teacher = try requireTeacher()
         try requireOnline()
         guard !items.isEmpty else { throw GearGuardError.emptyBatch }
         if let batchID = requestResults[requestID] {
-            return claims.filter { $0.returnBatchID == batchID }.count
+            let IDs = claims.filter { $0.returnBatchID == batchID }.map(\.id)
+            return ReturnReceipt(batchID: batchID, resolvedClaimIDs: IDs, resolvedCount: IDs.count)
         }
         let batchID = UUID().uuidString
         let equipmentIDs = Set(items.map(\.equipment.id))
         let now = Date.now
         var resolvedIDs: [String] = []
+        var affectedStudents: [String: [String]] = [:]
         for index in claims.indices where equipmentIDs.contains(claims[index].equipmentID) && claims[index].status == .active {
+            affectedStudents[claims[index].studentID, default: []].append(claims[index].equipmentID)
             claims[index].status = .returned
             claims[index].returnBatchID = batchID
             claims[index].returnedAt = now
             claims[index].returnedByTeacherID = teacher.id
             resolvedIDs.append(claims[index].id)
+        }
+        for (studentID, returnedEquipmentIDs) in affectedStudents {
+            notifications.append(GearNotification(
+                id: UUID().uuidString,
+                kind: .returned,
+                recipientRole: .student,
+                recipientUserID: studentID,
+                title: "Equipment returned",
+                message: "\(Set(returnedEquipmentIDs).count) \(Set(returnedEquipmentIDs).count == 1 ? "item was" : "items were") returned.",
+                equipmentIDs: Array(Set(returnedEquipmentIDs)),
+                claimID: nil,
+                createdAt: now,
+                isRead: false
+            ))
         }
         requestResults[requestID] = batchID
         auditEvents.append(AuditEvent(
@@ -148,7 +295,65 @@ final class GearGuardStore: ObservableObject {
             createdAt: now
         ))
         persist()
-        return resolvedIDs.count
+        return ReturnReceipt(batchID: batchID, resolvedClaimIDs: resolvedIDs, resolvedCount: resolvedIDs.count)
+    }
+
+    func updateIssue(id: String, status: IssueStatus) throws {
+        let teacher = try requireTeacher()
+        try requireOnline()
+        guard let index = issues.firstIndex(where: { $0.id == id }) else { return }
+        issues[index].status = status
+        issues[index].resolvedAt = status == .resolved ? .now : nil
+        issues[index].resolvedByTeacherID = status == .resolved ? teacher.id : nil
+        auditEvents.append(AuditEvent(id: UUID().uuidString, kind: .issueUpdated, actorID: teacher.id, equipmentIDs: [issues[index].equipmentID], claimIDs: [issues[index].claimID], createdAt: .now))
+        persist()
+    }
+
+    func markNotificationRead(_ id: String) {
+        guard let index = notifications.firstIndex(where: { $0.id == id }) else { return }
+        notifications[index].isRead = true
+        persist()
+    }
+
+    func processOverdue(now: Date = .now, threshold: TimeInterval = 24 * 60 * 60) {
+        let overdueClaims = claims.filter { $0.status == .active && now.timeIntervalSince($0.checkedOutAt) >= threshold }
+        for claim in overdueClaims {
+            let studentExists = notifications.contains {
+                $0.kind == .overdue && $0.claimID == claim.id && $0.recipientRole == .student
+            }
+            if !studentExists {
+                notifications.append(GearNotification(
+                    id: UUID().uuidString,
+                    kind: .overdue,
+                    recipientRole: .student,
+                    recipientUserID: claim.studentID,
+                    title: "Equipment return overdue",
+                    message: "An equipment item is overdue for return.",
+                    equipmentIDs: [claim.equipmentID],
+                    claimID: claim.id,
+                    createdAt: now,
+                    isRead: false
+                ))
+            }
+            let teacherExists = notifications.contains {
+                $0.kind == .overdue && $0.claimID == claim.id && $0.recipientRole == .teacher
+            }
+            if !teacherExists {
+                notifications.append(GearNotification(
+                    id: UUID().uuidString,
+                    kind: .overdue,
+                    recipientRole: .teacher,
+                    recipientUserID: nil,
+                    title: "Overdue equipment",
+                    message: "An active equipment claim is overdue.",
+                    equipmentIDs: [claim.equipmentID],
+                    claimID: claim.id,
+                    createdAt: now,
+                    isRead: false
+                ))
+            }
+        }
+        if !overdueClaims.isEmpty { persist() }
     }
 
     func equipment(withID id: String) -> Equipment? {
@@ -157,6 +362,11 @@ final class GearGuardStore: ObservableObject {
 
     private func requireOnline() throws {
         guard isOnline else { throw GearGuardError.offline }
+    }
+
+    private func validate(name: String, serial: String) throws {
+        guard (1...100).contains(name.count) else { throw GearGuardError.invalidName }
+        guard (1...50).contains(serial.count) else { throw GearGuardError.invalidSerial }
     }
 
     private func requireStudent() throws -> GearUser {
@@ -170,7 +380,15 @@ final class GearGuardStore: ObservableObject {
     }
 
     private func persist() {
-        persistence.save(StoreSnapshot(equipment: equipment, claims: claims, auditEvents: auditEvents, requestResults: requestResults))
+        persistence.save(StoreSnapshot(
+            equipment: equipment,
+            claims: claims,
+            issues: issues,
+            notifications: notifications,
+            auditEvents: auditEvents,
+            inactiveTagIDs: inactiveTagIDs,
+            requestResults: requestResults
+        ))
     }
 
     private static var seedSnapshot: StoreSnapshot {

@@ -6,7 +6,8 @@ struct ReturnView: View {
     @State private var staged: [ReturnCandidate] = []
     @State private var requestID = UUID().uuidString
     @State private var error: Error?
-    @State private var confirmation: ReturnConfirmation?
+    @State private var showingConfirmation = false
+    @State private var confirmationMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -62,34 +63,36 @@ struct ReturnView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("add-demo-return")
                 } footer: {
                     if !store.isOnline {
                         Label("Reconnect before scanning or confirming.", systemImage: "wifi.slash")
                             .foregroundStyle(.red)
                     }
                 }
-            }
-            .navigationTitle("Returns")
-            .safeAreaInset(edge: .bottom) {
                 if !staged.isEmpty {
-                    Button("Confirm return") { confirm() }
-                        .font(.headline)
+                    Section {
+                        Button {
+                            confirm()
+                        } label: {
+                            Text("Confirm return")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                        }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(.ultraThinMaterial)
+                        .accessibilityIdentifier("confirm-return")
+                    }
                 }
             }
-            .alert(item: $confirmation) { confirmation in
-                Alert(
-                    title: Text("Return recorded"),
-                    message: Text(confirmation.message),
-                    dismissButton: .default(Text("Done")) {
+            .navigationTitle("Returns")
+            .fullScreenCover(isPresented: $showingConfirmation) {
+                ReturnConfirmationView(message: confirmationMessage) {
                         staged = []
                         requestID = UUID().uuidString
+                        showingConfirmation = false
                     }
-                )
             }
             .errorAlert($error)
         }
@@ -109,17 +112,44 @@ struct ReturnView: View {
     }
 
     private func confirm() {
+        confirmationMessage = "Recording return…"
+        showingConfirmation = true
         do {
-            let count = try store.confirmReturn(items: staged, requestID: requestID)
-            confirmation = ReturnConfirmation(message: count == 0 ? "No active claims were found. An audit event was still created." : "\(count) active \(count == 1 ? "claim was" : "claims were") closed.")
+            let count = try store.confirmReturn(items: staged, requestID: requestID).resolvedCount
+            confirmationMessage = count == 0 ? "No active claims were found. An audit event was still created." : "\(count) active \(count == 1 ? "claim was" : "claims were") closed."
         } catch {
+            showingConfirmation = false
             self.error = error
         }
     }
 }
 
-private struct ReturnConfirmation: Identifiable {
-    let id = UUID()
+private struct ReturnConfirmationView: View {
     let message: String
-}
+    let done: () -> Void
 
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Image(systemName: "arrow.uturn.backward.circle.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(GearTheme.forest)
+                VStack(spacing: 8) {
+                    Text("Return recorded")
+                        .font(.title.bold())
+                    Text(message)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                Spacer()
+                Button("Done", action: done)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("return-done")
+            }
+            .padding(24)
+            .interactiveDismissDisabled()
+        }
+    }
+}

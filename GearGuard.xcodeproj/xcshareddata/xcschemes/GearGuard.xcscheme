@@ -64,6 +64,17 @@
                ReferencedContainer = "container:GearGuard.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "904665DB43628C09D74B79FD"
+               BuildableName = "GearGuardUITests.xctest"
+               BlueprintName = "GearGuardUITests"
+               ReferencedContainer = "container:GearGuard.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

@@ -50,6 +50,16 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: systems.edmundlim.GearGuardTests
+  GearGuardUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - GearGuardUITests
+    dependencies:
+      - target: GearGuard
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: systems.edmundlim.GearGuardUITests
 schemes:
   GearGuard:
     build:
@@ -59,3 +69,4 @@ schemes:
     test:
       targets:
         - GearGuardTests
+        - GearGuardUITests

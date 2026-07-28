@@ -69,6 +69,6 @@ struct SignInView: View {
         }
         .buttonStyle(.bordered)
         .controlSize(.large)
+        .accessibilityIdentifier("demo-\(role.rawValue)")
     }
 }
-

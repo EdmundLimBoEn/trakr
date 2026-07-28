@@ -8,7 +8,7 @@ GearGuard is a native SwiftUI equipment checkout app driven by NFC tags. This re
 2. Select an iPhone simulator or NFC-capable physical iPhone.
 3. Run the `GearGuard` scheme.
 4. Choose **Student** or **Teacher** on the sign-in screen.
-5. In the simulator, use **Add demo equipment** and **Enroll demo tag**. On a signed physical device with the NFC entitlement, use the NFC scan/write buttons.
+5. In the simulator, use **Add demo equipment**, **Enroll demo tag**, and **Use demo replacement**. On a signed physical device with the NFC entitlement, use the NFC scan/write buttons.
 
 The deployment target is iOS 17. No third-party packages, credentials, or backend are required.
 
@@ -16,15 +16,17 @@ The deployment target is iOS 17. No third-party packages, credentials, or backen
 
 - Approved school-email role derivation.
 - Student multi-item staging, removal, batch condition acknowledgment, issue reporting, idempotent checkout, receipt, and personal history.
-- Teacher NFC enrollment with write/read-back verification, inventory, active claimant visibility, multi-item returns, return-all semantics, and complete history.
-- Persistent on-device equipment, claim, idempotency, and audit records.
-- Offline protection that preserves staged items.
+- Teacher NFC enrollment with write/read-back verification, equipment editing/retirement, history-preserving tag replacement, active claimant visibility, multi-item returns, and return-all semantics.
+- Teacher overview for open, acknowledged, and resolved issues.
+- Role-scoped in-app checkout, return, issue, and overdue notifications without leaking issue text.
+- Persistent on-device equipment, claim, issue, notification, idempotency, and audit records with backward-compatible decoding.
+- Live network reachability plus offline protection that preserves staged items.
 - Real Core NFC ISO 14443/NDEF text reading and writing.
 - Simulator demo controls for every workflow.
 
 ## Production boundary
 
-The local `GearGuardStore` intentionally makes the assignment runnable without Firebase secrets. Before a real school pilot, replace it with a Firebase implementation of the same operations so domain role assignment, authorization, transactions, and idempotency are trusted server-side. See [production-integration.md](docs/production-integration.md).
+The local `GearGuardStore` intentionally makes the complete iOS workflow runnable without Firebase secrets. It is a single-device pilot backend. Before a multi-device school pilot, replace it with Firebase so Google authentication, shared state, trusted authorization, transactions, and remote push delivery happen server-side. See [production-integration.md](docs/production-integration.md).
 
 ## Test
 
@@ -35,3 +37,4 @@ xcodebuild test \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
+The suite includes unit coverage for authorization, validation, idempotency, multiple claims, return-all behavior, tag replacement, persistence migration, issue lifecycle, notification scoping, and overdue deduplication. UI tests exercise student checkout/activity, teacher return, enrollment, and tag replacement.

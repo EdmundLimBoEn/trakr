@@ -54,12 +54,56 @@ struct Claim: Codable, Identifiable, Hashable {
     var returnedByTeacherID: String?
 }
 
+enum IssueStatus: String, Codable, CaseIterable {
+    case open
+    case acknowledged
+    case resolved
+
+    var title: String { rawValue.capitalized }
+}
+
+struct EquipmentIssue: Codable, Identifiable, Hashable {
+    let id: String
+    let claimID: String
+    let equipmentID: String
+    let reportedByStudentID: String
+    let reportedByStudentEmail: String
+    let text: String
+    var status: IssueStatus
+    let reportedAt: Date
+    var resolvedAt: Date?
+    var resolvedByTeacherID: String?
+}
+
+enum NotificationKind: String, Codable {
+    case checkout
+    case returned
+    case issue
+    case overdue
+}
+
+struct GearNotification: Codable, Identifiable, Hashable {
+    let id: String
+    let kind: NotificationKind
+    let recipientRole: UserRole
+    let recipientUserID: String?
+    let title: String
+    let message: String
+    let equipmentIDs: [String]
+    let claimID: String?
+    let createdAt: Date
+    var isRead: Bool
+}
+
 struct AuditEvent: Codable, Identifiable {
     enum Kind: String, Codable {
         case equipmentEnrolled
+        case equipmentUpdated
+        case tagReplaced
         case checkoutConfirmed
         case returnConfirmed
         case returnWithoutClaim
+        case issueUpdated
     }
 
     let id: String
@@ -88,7 +132,14 @@ struct ReturnCandidate: Identifiable, Equatable {
 struct CheckoutReceipt: Identifiable {
     let id: String
     let equipment: [Equipment]
+    let claimIDs: [String]
     let timestamp: Date
+}
+
+struct ReturnReceipt {
+    let batchID: String
+    let resolvedClaimIDs: [String]
+    let resolvedCount: Int
 }
 
 enum GearGuardError: LocalizedError, Equatable {
@@ -100,6 +151,9 @@ enum GearGuardError: LocalizedError, Equatable {
     case duplicateTag
     case duplicateSerial
     case emptyBatch
+    case batchTooLarge
+    case invalidName
+    case invalidSerial
     case invalidIssue
     case nfcUnavailable
     case invalidTagPayload
@@ -117,6 +171,9 @@ enum GearGuardError: LocalizedError, Equatable {
         case .duplicateTag: "This tag is already enrolled."
         case .duplicateSerial: "This internal serial is already in use."
         case .emptyBatch: "Scan at least one item."
+        case .batchTooLarge: "A batch can contain at most 20 items."
+        case .invalidName: "Equipment names must contain 1–100 characters."
+        case .invalidSerial: "Internal serials must contain 1–50 characters."
         case .invalidIssue: "Add issue details for each affected item."
         case .nfcUnavailable: "NFC scanning is not available on this device."
         case .invalidTagPayload: "This is not a GearGuard tag."
@@ -154,4 +211,3 @@ enum TagCodec {
         bytes.map { String(format: "%02X", $0) }.joined()
     }
 }
-

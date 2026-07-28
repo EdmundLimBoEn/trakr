@@ -8,7 +8,11 @@ struct HomeView: View {
             if store.currentUser?.role == .student {
                 CheckoutView()
                     .tabItem { Label("Collect", systemImage: "shippingbox.fill") }
+                ActivityView()
+                    .tabItem { Label("Activity", systemImage: "bell.fill") }
             } else {
+                TeacherDashboardView()
+                    .tabItem { Label("Overview", systemImage: "rectangle.grid.2x2.fill") }
                 ReturnView()
                     .tabItem { Label("Returns", systemImage: "arrow.uturn.backward.circle.fill") }
                 EquipmentListView()
@@ -41,8 +45,9 @@ private struct ProfileView: View {
                     }
                 }
                 Section("MVP controls") {
-                    Toggle("Internet available", isOn: $store.isOnline)
-                    Text("Turn this off to verify that checkout and return confirmations preserve staged items and fail safely.")
+                    LabeledContent("Network", value: store.isNetworkReachable ? "Connected" : "Unavailable")
+                    Toggle("Simulate offline", isOn: $store.simulateOffline)
+                    Text("Offline mode preserves staged items and blocks scan and confirmation until connectivity returns.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
