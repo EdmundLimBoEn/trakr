@@ -19,7 +19,7 @@ This matrix separates behavior proven in the credential-free iOS MVP from checks
 | Offline confirmation blocked | `testOfflineConfirmationDoesNotMutateState` |
 | Checkout, return, issue, overdue notifications | Notification scoping and overdue tests |
 | Persistent schema compatibility | legacy decode and snapshot round-trip tests |
-| Student and teacher simulator journeys | `GearGuardUITests` |
+| Student and teacher simulator journeys | `TrakrUITests` |
 | Trusted role assignment and callable validation | `firebase/functions/src` and domain tests |
 | Firestore authorization boundary | Firebase Emulator Suite rules tests |
 | Atomic/idempotent server mutations | transactional callable implementations |

@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "918331979990",
+    "project_id": "trakr-sst-2026",
+    "storage_bucket": "trakr-sst-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:918331979990:android:0bbeea2df955b2bc5c3177",
+        "android_client_info": {
+          "package_name": "systems.edmundlim.trakr"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "918331979990-k29cv67laj0t65q2p3vgfmllk459nt57.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "systems.edmundlim.trakr",
+            "certificate_hash": "1b61dc631f73a3bf67b01cc478fad290e9dd6d15"
+          }
+        },
+        {
+          "client_id": "918331979990-hss2aft7ihang6hr25j02vfl0mrg380h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHz93lWILAOyn5IT50GChDgF2eUjAWCoE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "918331979990-hss2aft7ihang6hr25j02vfl0mrg380h.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "918331979990-ku0gfu5mno1mhff8j8uj55qpreqbs2gl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "systems.edmundlim.trakr"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

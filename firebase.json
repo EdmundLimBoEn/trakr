@@ -26,5 +26,13 @@
       "port": 4000
     },
     "singleProjectMode": true
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Trakr",
+        "supportEmail": "lim_bo_en_edmund@s2025.ssts.edu.sg"
+      }
+    }
   }
 }

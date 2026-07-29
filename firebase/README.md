@@ -1,6 +1,6 @@
-# GearGuard Firebase backend
+# Trakr Firebase backend
 
-This directory contains the trusted server half of GearGuard:
+This directory contains the trusted server half of Trakr:
 
 - callable Cloud Functions in `functions/src/index.ts`;
 - shared validation and role derivation;
@@ -17,4 +17,4 @@ bun install --cwd firebase/functions
 bun run --cwd firebase/functions verify
 ```
 
-The checked-in `gearguard-test` environment file contains only the non-secret 24-hour emulator default. Use `bun run --cwd firebase/functions serve` for local emulators. Copy `.firebaserc.example` to `.firebaserc`, replace the project IDs, and use `bun run --cwd firebase/functions deploy` only after selecting the intended Firebase project.
+The checked-in `trakr-test` and `trakr-sst-2026` environment files contain only the non-secret 24-hour overdue default. Use `bun run --cwd firebase/functions serve` for local emulators. The active development alias points to `trakr-sst-2026`; add a distinct production alias before launch.

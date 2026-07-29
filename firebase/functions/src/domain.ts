@@ -1,7 +1,7 @@
 export type Role = "student" | "teacher";
 export type ItemCondition = "no_issues" | "has_issue";
 
-const TAG_PATTERN = /^gg:[0-9A-HJKMNP-TV-Z]{26}$/;
+const TAG_PATTERN = /^tr:[0-9A-HJKMNP-TV-Z]{26}$/;
 
 export function deriveRole(email: string): Role {
   const parts = email.trim().toLowerCase().split("@");
@@ -75,4 +75,3 @@ export function validateString(value: unknown, field: string, maximum = 100): st
   if (result.length < 1 || result.length > maximum) throw new Error(`invalid-${field}`);
   return result;
 }
-

@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "trakr-sst-2026",
+    "development": "trakr-sst-2026"
+  },
+  "targets": {},
+  "etags": {}
+}

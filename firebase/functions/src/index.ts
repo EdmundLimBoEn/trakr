@@ -93,10 +93,11 @@ export const registerDevice = onCall(CALLABLE_OPTIONS, async (request) => {
   try {
     const installationId = validateString(data.installationId, "installation-id", 128);
     const fcmToken = validateString(data.fcmToken, "fcm-token", 4096);
+    const platform = data.platform === "android" ? "android" : "ios";
     await db.collection("users").doc(actor.uid).collection("devices").doc(installationId).set(
       {
         installationId,
-        platform: "ios",
+        platform,
         fcmToken,
         notificationsEnabled: data.notificationsEnabled !== false,
         updatedAt: Timestamp.now(),

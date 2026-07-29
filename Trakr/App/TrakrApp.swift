@@ -1,0 +1,50 @@
+import FirebaseAppCheck
+import FirebaseCore
+import GoogleSignIn
+import SwiftUI
+
+@main
+struct TrakrApp: App {
+    @StateObject private var store: TrakrStore
+    @StateObject private var connectivity = ConnectivityMonitor()
+
+    init() {
+#if DEBUG
+        AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
+#else
+        AppCheck.setAppCheckProviderFactory(DeviceCheckProviderFactory())
+#endif
+        FirebaseApp.configure()
+        _store = StateObject(wrappedValue: TrakrStore())
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            RootView()
+                .environmentObject(store)
+                .tint(Color(red: 0.09, green: 0.31, blue: 0.24))
+                .onReceive(connectivity.$isReachable) { store.setNetworkReachable($0) }
+                .onAppear {
+                    if ProcessInfo.processInfo.arguments.contains("--reset-data") {
+                        store.resetDemoData()
+                    }
+                }
+                .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
+        }
+    }
+}
+
+struct RootView: View {
+    @EnvironmentObject private var store: TrakrStore
+
+    var body: some View {
+        Group {
+            if store.currentUser == nil {
+                SignInView()
+            } else {
+                HomeView()
+            }
+        }
+        .animation(.snappy, value: store.currentUser)
+    }
+}

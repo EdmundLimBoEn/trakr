@@ -1,4 +1,4 @@
-name: GearGuard
+name: Trakr
 options:
   bundleIdPrefix: systems.edmundlim
   deploymentTarget:
@@ -10,63 +10,92 @@ settings:
     SWIFT_STRICT_CONCURRENCY: minimal
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 12.17.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 9.2.0
 targets:
-  GearGuard:
+  Trakr:
     type: application
     platform: iOS
     sources:
-      - GearGuard
+      - Trakr
     info:
-      path: GearGuard/Resources/Info.plist
+      path: Trakr/Resources/Info.plist
       properties:
-        CFBundleDisplayName: GearGuard
+        CFBundleDisplayName: Trakr
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - com.googleusercontent.apps.918331979990-ku0gfu5mno1mhff8j8uj55qpreqbs2gl
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
-        NFCReaderUsageDescription: GearGuard scans equipment tags for checkout, return, and enrollment.
+        NFCReaderUsageDescription: Trakr scans equipment tags for checkout, return, and enrollment.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     entitlements:
-      path: GearGuard/GearGuard.entitlements
+      path: Trakr/Trakr.entitlements
       properties:
         com.apple.developer.nfc.readersession.formats:
           - NDEF
           - TAG
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: systems.edmundlim.GearGuard
-        PRODUCT_NAME: GearGuard
+        PRODUCT_BUNDLE_IDENTIFIER: systems.edmundlim.trakr
+        PRODUCT_NAME: Trakr
+        OTHER_LDFLAGS: "$(inherited) -ObjC"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-  GearGuardTests:
+    dependencies:
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Firebase
+        product: FirebaseFunctions
+      - package: Firebase
+        product: FirebaseMessaging
+      - package: Firebase
+        product: FirebaseInstallations
+      - package: Firebase
+        product: FirebaseAppCheck
+      - package: GoogleSignIn
+        product: GoogleSignIn
+  TrakrTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - GearGuardTests
+      - TrakrTests
     dependencies:
-      - target: GearGuard
+      - target: Trakr
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: systems.edmundlim.GearGuardTests
-  GearGuardUITests:
+        PRODUCT_BUNDLE_IDENTIFIER: systems.edmundlim.trakr.tests
+  TrakrUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - GearGuardUITests
+      - TrakrUITests
     dependencies:
-      - target: GearGuard
+      - target: Trakr
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: systems.edmundlim.GearGuardUITests
+        PRODUCT_BUNDLE_IDENTIFIER: systems.edmundlim.trakr.uitests
 schemes:
-  GearGuard:
+  Trakr:
     build:
       targets:
-        GearGuard: all
-        GearGuardTests: [test]
+        Trakr: all
+        TrakrTests: [test]
     test:
       targets:
-        - GearGuardTests
-        - GearGuardUITests
+        - TrakrTests
+        - TrakrUITests

@@ -1,5 +1,5 @@
 {
-  "name": "gearguard-functions",
+  "name": "trakr-functions",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -11,8 +11,8 @@
     "check": "tsc --noEmit",
     "test": "bun test test/domain.test.ts",
     "test:rules": "bun test test/firestore.rules.test.ts",
-    "test:rules:emulator": "cd ../.. && firebase emulators:exec --only firestore --project gearguard-test 'bun run --cwd firebase/functions test:rules'",
-    "test:functions:emulator": "bun run build && cd ../.. && firebase emulators:exec --only firestore,functions --project gearguard-test 'sh firebase/functions/test/emulator-smoke.sh'",
+    "test:rules:emulator": "cd ../.. && firebase emulators:exec --only firestore --project trakr-test 'bun run --cwd firebase/functions test:rules'",
+    "test:functions:emulator": "bun run build && cd ../.. && firebase emulators:exec --only firestore,functions --project trakr-test 'sh firebase/functions/test/emulator-smoke.sh'",
     "verify": "bun run check && bun run test && bun run test:rules:emulator && bun run test:functions:emulator",
     "serve": "bun run build && cd ../.. && firebase emulators:start --only auth,firestore,functions",
     "deploy": "cd ../.. && firebase deploy --only functions,firestore"

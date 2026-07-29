@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "gearguard-functions",
+      "name": "trakr-functions",
       "dependencies": {
         "firebase-admin": "14.2.0",
         "firebase-functions": "7.3.0",

@@ -1,0 +1,783 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0B5FBA4333826F2B0B3D714F /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C56D5074E03F6377E7A48A8 /* Domain.swift */; };
+		0D71AE0E8EDF42FB7798BBDF /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 62BC0B08EBA358F8DB76E5A6 /* FirebaseAuth */; };
+		1FA708955517B85A8938EF43 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7739C2AFD85B933F1A0819D2 /* FirebaseCore */; };
+		257A7C8D5020ED19875BF579 /* EquipmentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF79367C23BB97D876228E82 /* EquipmentListView.swift */; };
+		3A55EFE3CF1195FAF6C1C705 /* TrakrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F9517E7FA0C8633AB4D3849 /* TrakrApp.swift */; };
+		3E3C5D38DA189054B2319958 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5DC7B7F20295A7D8800DCC29 /* Assets.xcassets */; };
+		467F1CA992FEDB5638EC4076 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 84430D79EBD6C3082CA2F748 /* GoogleSignIn */; };
+		482CDCF5BEB3C3CEC93CC79F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5AD96F1B71575C53E4ADE2AB /* GoogleService-Info.plist */; };
+		62556D7074B5ABB4D504026F /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676B9F2141A7D6676E75399F /* ActivityView.swift */; };
+		6E6821E3C09A1A45D820AF41 /* TrakrTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EB213906FC46AA63EFCCB09 /* TrakrTests.swift */; };
+		7806554BCE47D90DD9CC286D /* FirebaseGateway.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72C73F387A3777E031998ED /* FirebaseGateway.swift */; };
+		8771FEC587F3A5E7A301A016 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 9D8086DD107B2E961CB301D8 /* FirebaseAppCheck */; };
+		9BC9A82526CADAC55C3BDBAC /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = BEB1F7091F2838A8A1E005F8 /* FirebaseMessaging */; };
+		A24DE234B6DF0D72ED6D86E3 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09677F989DD0F46E9E377B92 /* SignInView.swift */; };
+		ABE1FAAF1488E181B79E448B /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = F7D92B7FC44A55DCCE0869D9 /* FirebaseFunctions */; };
+		AFD38EF4F697011ABAC8782F /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0D9896703C35DB123CFA0B /* HistoryView.swift */; };
+		AFE39E70B981F41679FF5C24 /* TrakrUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DABDABC079B07BB00831031A /* TrakrUITests.swift */; };
+		C381C9463B7F5D310F775A5D /* CheckoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BEDF3DF2163C1ECBC35F78 /* CheckoutView.swift */; };
+		C4C01DB77975F646C2A53146 /* FirebaseInstallations in Frameworks */ = {isa = PBXBuildFile; productRef = 1E0157F131B6F62DA6A2052D /* FirebaseInstallations */; };
+		CB724E3E615E4B52C6C50BD6 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 034139735DCAE7FCD8B006A9 /* FirebaseFirestore */; };
+		E16B2B50F56BB4C870244316 /* PersistedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFF3A868AC66F79B18D46DA1 /* PersistedStore.swift */; };
+		E1AC2A4DA2C4042CF6332B18 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C13BB30893AA2B49BDCF721 /* HomeView.swift */; };
+		EE0FC219FA99EDF59E15A749 /* ConnectivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7975F346860E5D9214B27A49 /* ConnectivityMonitor.swift */; };
+		EFB3BCB8637EDE6223AA6448 /* ReturnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15AAC886F3D83A7A2ADE433 /* ReturnView.swift */; };
+		F120B4647F0F4EA1A0ED0777 /* TrakrStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46A8A13E2955EF9D1D15DFA1 /* TrakrStore.swift */; };
+		F281CE2196086411AA091F2D /* NFCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C42D1A0E7310511F17AB1C3 /* NFCService.swift */; };
+		F95CBFCA6FC6B443B4E86317 /* TrakrTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2C68EAECFA4086F4C3191A /* TrakrTheme.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0BBCF19233D227B0DFA32071 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9C3F4D73D3092D18E3FE9D15 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E7E144AE5E9FDE835510D1C;
+			remoteInfo = Trakr;
+		};
+		9186B29634108BE8A91FB4F1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9C3F4D73D3092D18E3FE9D15 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E7E144AE5E9FDE835510D1C;
+			remoteInfo = Trakr;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		09677F989DD0F46E9E377B92 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		0C13BB30893AA2B49BDCF721 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		2C42D1A0E7310511F17AB1C3 /* NFCService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCService.swift; sourceTree = "<group>"; };
+		46A8A13E2955EF9D1D15DFA1 /* TrakrStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrakrStore.swift; sourceTree = "<group>"; };
+		4EB213906FC46AA63EFCCB09 /* TrakrTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrakrTests.swift; sourceTree = "<group>"; };
+		5AD96F1B71575C53E4ADE2AB /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		5C56D5074E03F6377E7A48A8 /* Domain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Domain.swift; sourceTree = "<group>"; };
+		5DC7B7F20295A7D8800DCC29 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5F9517E7FA0C8633AB4D3849 /* TrakrApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrakrApp.swift; sourceTree = "<group>"; };
+		676B9F2141A7D6676E75399F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
+		6FB486C388E7FA5F1C40B4D4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7975F346860E5D9214B27A49 /* ConnectivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityMonitor.swift; sourceTree = "<group>"; };
+		927AD6FF697A86859AE87B39 /* TrakrTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TrakrTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD0D9896703C35DB123CFA0B /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		C7BEDF3DF2163C1ECBC35F78 /* CheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutView.swift; sourceTree = "<group>"; };
+		CC2C68EAECFA4086F4C3191A /* TrakrTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrakrTheme.swift; sourceTree = "<group>"; };
+		CDE9E59725C60FDBA7B880CF /* Trakr.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Trakr.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D72C73F387A3777E031998ED /* FirebaseGateway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseGateway.swift; sourceTree = "<group>"; };
+		DABDABC079B07BB00831031A /* TrakrUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrakrUITests.swift; sourceTree = "<group>"; };
+		DF79367C23BB97D876228E82 /* EquipmentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentListView.swift; sourceTree = "<group>"; };
+		DFF3A868AC66F79B18D46DA1 /* PersistedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedStore.swift; sourceTree = "<group>"; };
+		F15AAC886F3D83A7A2ADE433 /* ReturnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnView.swift; sourceTree = "<group>"; };
+		F8B13BD16738BD071548394E /* TrakrUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TrakrUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FAB20BD8D0AFD4DB58BD6BAC /* Trakr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Trakr.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E11C858BFE2D45890BE46C9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1FA708955517B85A8938EF43 /* FirebaseCore in Frameworks */,
+				0D71AE0E8EDF42FB7798BBDF /* FirebaseAuth in Frameworks */,
+				CB724E3E615E4B52C6C50BD6 /* FirebaseFirestore in Frameworks */,
+				ABE1FAAF1488E181B79E448B /* FirebaseFunctions in Frameworks */,
+				9BC9A82526CADAC55C3BDBAC /* FirebaseMessaging in Frameworks */,
+				C4C01DB77975F646C2A53146 /* FirebaseInstallations in Frameworks */,
+				8771FEC587F3A5E7A301A016 /* FirebaseAppCheck in Frameworks */,
+				467F1CA992FEDB5638EC4076 /* GoogleSignIn in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		16CCE76F468EC2C91167FD13 /* NFC */ = {
+			isa = PBXGroup;
+			children = (
+				2C42D1A0E7310511F17AB1C3 /* NFCService.swift */,
+			);
+			path = NFC;
+			sourceTree = "<group>";
+		};
+		2BBED73AAA3ABF6033DDC830 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				09677F989DD0F46E9E377B92 /* SignInView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		3851BC66BA9F871EEC344CE5 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				5C56D5074E03F6377E7A48A8 /* Domain.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		38B29F7E9EDD22A4FBC381A8 /* TrakrUITests */ = {
+			isa = PBXGroup;
+			children = (
+				DABDABC079B07BB00831031A /* TrakrUITests.swift */,
+			);
+			path = TrakrUITests;
+			sourceTree = "<group>";
+		};
+		499A9700D3C857FE78034B27 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				5DC7B7F20295A7D8800DCC29 /* Assets.xcassets */,
+				6FB486C388E7FA5F1C40B4D4 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		6607BD686538832DB285F743 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CDE9E59725C60FDBA7B880CF /* Trakr.app */,
+				927AD6FF697A86859AE87B39 /* TrakrTests.xctest */,
+				F8B13BD16738BD071548394E /* TrakrUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7C51224892EFF128BAFBBC90 /* History */ = {
+			isa = PBXGroup;
+			children = (
+				AD0D9896703C35DB123CFA0B /* HistoryView.swift */,
+			);
+			path = History;
+			sourceTree = "<group>";
+		};
+		AE593B09E03BF517F47FF15A /* Returns */ = {
+			isa = PBXGroup;
+			children = (
+				F15AAC886F3D83A7A2ADE433 /* ReturnView.swift */,
+			);
+			path = Returns;
+			sourceTree = "<group>";
+		};
+		B5E1030A15273C788880C375 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				5F9517E7FA0C8633AB4D3849 /* TrakrApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B756A7ECD4DD0FC2E8F2AB92 /* Checkout */ = {
+			isa = PBXGroup;
+			children = (
+				C7BEDF3DF2163C1ECBC35F78 /* CheckoutView.swift */,
+			);
+			path = Checkout;
+			sourceTree = "<group>";
+		};
+		BB6696ABF6CECD74C127D0C1 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				7975F346860E5D9214B27A49 /* ConnectivityMonitor.swift */,
+				D72C73F387A3777E031998ED /* FirebaseGateway.swift */,
+				DFF3A868AC66F79B18D46DA1 /* PersistedStore.swift */,
+				46A8A13E2955EF9D1D15DFA1 /* TrakrStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		C85F4E0B5683A132C3CBABF9 /* Equipment */ = {
+			isa = PBXGroup;
+			children = (
+				DF79367C23BB97D876228E82 /* EquipmentListView.swift */,
+			);
+			path = Equipment;
+			sourceTree = "<group>";
+		};
+		C992BC9BCE9598B14A9DD5C2 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				676B9F2141A7D6676E75399F /* ActivityView.swift */,
+				0C13BB30893AA2B49BDCF721 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		CA8F06BE5C3B40257FD09006 = {
+			isa = PBXGroup;
+			children = (
+				CD2F5983104676C12237675D /* Trakr */,
+				F4FCB959E10B2E8CF4F9F898 /* TrakrTests */,
+				38B29F7E9EDD22A4FBC381A8 /* TrakrUITests */,
+				6607BD686538832DB285F743 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CD2F5983104676C12237675D /* Trakr */ = {
+			isa = PBXGroup;
+			children = (
+				5AD96F1B71575C53E4ADE2AB /* GoogleService-Info.plist */,
+				FAB20BD8D0AFD4DB58BD6BAC /* Trakr.entitlements */,
+				B5E1030A15273C788880C375 /* App */,
+				F1B83E029C96D89793664070 /* Components */,
+				E737E88092EBCCAFE027019B /* Features */,
+				3851BC66BA9F871EEC344CE5 /* Models */,
+				16CCE76F468EC2C91167FD13 /* NFC */,
+				499A9700D3C857FE78034B27 /* Resources */,
+				BB6696ABF6CECD74C127D0C1 /* Services */,
+			);
+			path = Trakr;
+			sourceTree = "<group>";
+		};
+		E737E88092EBCCAFE027019B /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				2BBED73AAA3ABF6033DDC830 /* Auth */,
+				B756A7ECD4DD0FC2E8F2AB92 /* Checkout */,
+				C85F4E0B5683A132C3CBABF9 /* Equipment */,
+				7C51224892EFF128BAFBBC90 /* History */,
+				C992BC9BCE9598B14A9DD5C2 /* Home */,
+				AE593B09E03BF517F47FF15A /* Returns */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		F1B83E029C96D89793664070 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				CC2C68EAECFA4086F4C3191A /* TrakrTheme.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		F4FCB959E10B2E8CF4F9F898 /* TrakrTests */ = {
+			isa = PBXGroup;
+			children = (
+				4EB213906FC46AA63EFCCB09 /* TrakrTests.swift */,
+			);
+			path = TrakrTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		494280016D1395085CEA8EFD /* TrakrTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE641580BBD2AFE4254488EF /* Build configuration list for PBXNativeTarget "TrakrTests" */;
+			buildPhases = (
+				21A420A59D6ADCBC436B2C6D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				746B28E67204EF1032DEE492 /* PBXTargetDependency */,
+			);
+			name = TrakrTests;
+			packageProductDependencies = (
+			);
+			productName = TrakrTests;
+			productReference = 927AD6FF697A86859AE87B39 /* TrakrTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		5E7E144AE5E9FDE835510D1C /* Trakr */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3C5B0B4FEE2ACE55BFA2F222 /* Build configuration list for PBXNativeTarget "Trakr" */;
+			buildPhases = (
+				5C44F73EA62564A3EDEE6BF4 /* Sources */,
+				BD3396C9154FAFE3878AC051 /* Resources */,
+				E11C858BFE2D45890BE46C9A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Trakr;
+			packageProductDependencies = (
+				7739C2AFD85B933F1A0819D2 /* FirebaseCore */,
+				62BC0B08EBA358F8DB76E5A6 /* FirebaseAuth */,
+				034139735DCAE7FCD8B006A9 /* FirebaseFirestore */,
+				F7D92B7FC44A55DCCE0869D9 /* FirebaseFunctions */,
+				BEB1F7091F2838A8A1E005F8 /* FirebaseMessaging */,
+				1E0157F131B6F62DA6A2052D /* FirebaseInstallations */,
+				9D8086DD107B2E961CB301D8 /* FirebaseAppCheck */,
+				84430D79EBD6C3082CA2F748 /* GoogleSignIn */,
+			);
+			productName = Trakr;
+			productReference = CDE9E59725C60FDBA7B880CF /* Trakr.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C117928C72EBB050C1846669 /* TrakrUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7839667626B8C50F4E8B116F /* Build configuration list for PBXNativeTarget "TrakrUITests" */;
+			buildPhases = (
+				7CCED956C87EBBF43E70710F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B07F7270830DE4316BAECFD6 /* PBXTargetDependency */,
+			);
+			name = TrakrUITests;
+			packageProductDependencies = (
+			);
+			productName = TrakrUITests;
+			productReference = F8B13BD16738BD071548394E /* TrakrUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9C3F4D73D3092D18E3FE9D15 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					494280016D1395085CEA8EFD = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					5E7E144AE5E9FDE835510D1C = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					C117928C72EBB050C1846669 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = 5E7E144AE5E9FDE835510D1C;
+					};
+				};
+			};
+			buildConfigurationList = A4CFAE1A93FE91F0149146E1 /* Build configuration list for PBXProject "Trakr" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = CA8F06BE5C3B40257FD09006;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				38476E69E8CC14D272DA5560 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 6607BD686538832DB285F743 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5E7E144AE5E9FDE835510D1C /* Trakr */,
+				494280016D1395085CEA8EFD /* TrakrTests */,
+				C117928C72EBB050C1846669 /* TrakrUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BD3396C9154FAFE3878AC051 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3E3C5D38DA189054B2319958 /* Assets.xcassets in Resources */,
+				482CDCF5BEB3C3CEC93CC79F /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		21A420A59D6ADCBC436B2C6D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E6821E3C09A1A45D820AF41 /* TrakrTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5C44F73EA62564A3EDEE6BF4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				62556D7074B5ABB4D504026F /* ActivityView.swift in Sources */,
+				C381C9463B7F5D310F775A5D /* CheckoutView.swift in Sources */,
+				EE0FC219FA99EDF59E15A749 /* ConnectivityMonitor.swift in Sources */,
+				0B5FBA4333826F2B0B3D714F /* Domain.swift in Sources */,
+				257A7C8D5020ED19875BF579 /* EquipmentListView.swift in Sources */,
+				7806554BCE47D90DD9CC286D /* FirebaseGateway.swift in Sources */,
+				AFD38EF4F697011ABAC8782F /* HistoryView.swift in Sources */,
+				E1AC2A4DA2C4042CF6332B18 /* HomeView.swift in Sources */,
+				F281CE2196086411AA091F2D /* NFCService.swift in Sources */,
+				E16B2B50F56BB4C870244316 /* PersistedStore.swift in Sources */,
+				EFB3BCB8637EDE6223AA6448 /* ReturnView.swift in Sources */,
+				A24DE234B6DF0D72ED6D86E3 /* SignInView.swift in Sources */,
+				3A55EFE3CF1195FAF6C1C705 /* TrakrApp.swift in Sources */,
+				F120B4647F0F4EA1A0ED0777 /* TrakrStore.swift in Sources */,
+				F95CBFCA6FC6B443B4E86317 /* TrakrTheme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7CCED956C87EBBF43E70710F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AFE39E70B981F41679FF5C24 /* TrakrUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		746B28E67204EF1032DEE492 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5E7E144AE5E9FDE835510D1C /* Trakr */;
+			targetProxy = 9186B29634108BE8A91FB4F1 /* PBXContainerItemProxy */;
+		};
+		B07F7270830DE4316BAECFD6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5E7E144AE5E9FDE835510D1C /* Trakr */;
+			targetProxy = 0BBCF19233D227B0DFA32071 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		11CAAB2E9ECEA8F40BA146CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.trakr.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Trakr.app/Trakr";
+			};
+			name = Debug;
+		};
+		48B83C825244538D4F7C0C46 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Trakr/Trakr.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Trakr/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.trakr;
+				PRODUCT_NAME = Trakr;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		4D88B487807B022D2AB073EF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		58CBAB7C6BF4888543ACE364 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.trakr.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Trakr.app/Trakr";
+			};
+			name = Release;
+		};
+		64E4268692B966BA3AFD189C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.trakr.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Trakr;
+			};
+			name = Debug;
+		};
+		C2D46E79ED6FC8F3C975AE1C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		C44F3DED33EF8F92B33DCE12 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Trakr/Trakr.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Trakr/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.trakr;
+				PRODUCT_NAME = Trakr;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		EE3648E4C6306422FE49837B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.trakr.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Trakr;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3C5B0B4FEE2ACE55BFA2F222 /* Build configuration list for PBXNativeTarget "Trakr" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				48B83C825244538D4F7C0C46 /* Debug */,
+				C44F3DED33EF8F92B33DCE12 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7839667626B8C50F4E8B116F /* Build configuration list for PBXNativeTarget "TrakrUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				64E4268692B966BA3AFD189C /* Debug */,
+				EE3648E4C6306422FE49837B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A4CFAE1A93FE91F0149146E1 /* Build configuration list for PBXProject "Trakr" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D88B487807B022D2AB073EF /* Debug */,
+				C2D46E79ED6FC8F3C975AE1C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CE641580BBD2AFE4254488EF /* Build configuration list for PBXNativeTarget "TrakrTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				11CAAB2E9ECEA8F40BA146CF /* Debug */,
+				58CBAB7C6BF4888543ACE364 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		38476E69E8CC14D272DA5560 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.2.0;
+			};
+		};
+		3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.17.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		034139735DCAE7FCD8B006A9 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		1E0157F131B6F62DA6A2052D /* FirebaseInstallations */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseInstallations;
+		};
+		62BC0B08EBA358F8DB76E5A6 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		7739C2AFD85B933F1A0819D2 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		84430D79EBD6C3082CA2F748 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 38476E69E8CC14D272DA5560 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		9D8086DD107B2E961CB301D8 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+		BEB1F7091F2838A8A1E005F8 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+		F7D92B7FC44A55DCCE0869D9 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3EFBB4DF38110A7E02C25C03 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 9C3F4D73D3092D18E3FE9D15 /* Project object */;
+}

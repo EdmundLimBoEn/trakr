@@ -12,7 +12,7 @@ let environment: RulesTestEnvironment;
 
 beforeAll(async () => {
   environment = await initializeTestEnvironment({
-    projectId: "gearguard-test",
+    projectId: "trakr-test",
     firestore: {
       host: "127.0.0.1",
       port: 8080,

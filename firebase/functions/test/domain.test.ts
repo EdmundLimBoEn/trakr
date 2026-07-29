@@ -7,7 +7,7 @@ import {
   validateTagId,
 } from "../src/domain.js";
 
-const validTag = "gg:01J9Z6M4Y7X3N8K2D5P0Q1R4TC";
+const validTag = "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TC";
 
 describe("role derivation", () => {
   test("derives exact teacher and nested student domains", () => {
@@ -23,10 +23,10 @@ describe("role derivation", () => {
 });
 
 describe("equipment validation", () => {
-  test("validates GearGuard ULIDs", () => {
+  test("validates Trakr ULIDs", () => {
     expect(validateTagId(validTag)).toBe(validTag);
-    expect(() => validateTagId("gg:not-a-ulid")).toThrow("invalid-tag");
-    expect(() => validateTagId("gg:01J9Z6M4Y7X3N8K2D5P0Q1R4TI")).toThrow("invalid-tag");
+    expect(() => validateTagId("tr:not-a-ulid")).toThrow("invalid-tag");
+    expect(() => validateTagId("tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TI")).toThrow("invalid-tag");
   });
 
   test("normalizes serials without losing the display form", () => {
@@ -66,11 +66,10 @@ describe("checkout validation", () => {
     expect(() =>
       validateCheckoutItems(
         Array.from({ length: 21 }, (_, index) => ({
-          tagId: `gg:${index.toString().padStart(26, "0")}`,
+          tagId: `tr:${index.toString().padStart(26, "0")}`,
           condition: "no_issues",
         })),
       ),
     ).toThrow("batch-too-large");
   });
 });
-

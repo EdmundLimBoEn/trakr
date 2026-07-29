@@ -1,7 +1,6 @@
 {
   "projects": {
-    "development": "replace-with-gearguard-dev",
-    "production": "replace-with-gearguard-prod"
+    "development": "replace-with-trakr-dev",
+    "production": "replace-with-trakr-prod"
   }
 }
-

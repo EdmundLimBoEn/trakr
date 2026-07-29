@@ -1,13 +1,55 @@
 rules_version = '2';
 
+// ===============================================================
+// Assumed data model
+// ===============================================================
+// users/{uid}: uid, email, displayName, role, emailDomain, active,
+//   createdAt, updatedAt, lastLoginAt. Contains PII; owner-readable.
+// users/{uid}/devices/{installationId}: installationId, platform,
+//   fcmToken, notificationsEnabled, updatedAt. Contains a private token.
+// equipment/{id}: inventory identity, serial, active tag, status, audit fields.
+// claims/{id}: checkout/return state, student UID/email, condition, timestamps.
+// issues/{id}: claim/equipment/student references, text, state, timestamps.
+// auditEvents/{id}: trusted immutable workflow audit records.
+// All client writes are intentionally denied. Trusted callable functions use
+// the Admin SDK and validate each write before it reaches Firestore.
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
+    function isAuthenticated() {
       return request.auth != null;
     }
 
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function uidUnchanged(uid) {
+      return isAuthenticated() && request.resource.data.uid == uid;
+    }
+
+    function uidNotModified() {
+      return request.resource.data.uid == resource.data.uid;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasOnly([
+          "uid", "email", "displayName", "role", "emailDomain", "active",
+          "createdAt", "updatedAt", "lastLoginAt"
+        ])
+        && data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128
+        && data.email is string && data.email.size() > 3 && data.email.size() <= 254
+        && data.displayName is string && data.displayName.size() <= 100
+        && data.role in ["student", "teacher"]
+        && data.emailDomain is string && data.emailDomain.size() <= 253
+        && data.active is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.lastLoginAt is timestamp;
+    }
+
     function role() {
-      return signedIn() ? request.auth.token.role : null;
+      return isAuthenticated() ? request.auth.token.role : null;
     }
 
     function isTeacher() {
@@ -19,11 +61,11 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+      allow read: if isOwner(uid);
       allow write: if false;
 
       match /devices/{deviceId} {
-        allow read: if signedIn() && request.auth.uid == uid;
+        allow read: if isOwner(uid);
         allow write: if false;
       }
     }
@@ -60,4 +102,3 @@ service cloud.firestore {
     }
   }
 }
-

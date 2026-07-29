@@ -1,16 +1,24 @@
-# GearGuard iOS MVP
+# Trakr native MVP
 
-GearGuard is a native SwiftUI equipment checkout app driven by NFC tags. This repository contains the complete credential-free iOS MVP plus a deployable Firebase backend for the trusted multi-device workflows described in the product specification.
+Trakr is an NFC equipment checkout app with native SwiftUI iOS and Jetpack Compose Android clients backed by Firebase.
 
-## Run
+## iOS
 
-1. Open `GearGuard.xcodeproj` in Xcode.
+1. Open `Trakr.xcodeproj` in Xcode.
 2. Select an iPhone simulator or NFC-capable physical iPhone.
-3. Run the `GearGuard` scheme.
-4. Choose **Student** or **Teacher** on the sign-in screen.
-5. In the simulator, use **Add demo equipment**, **Enroll demo tag**, and **Use demo replacement**. On a signed physical device with the NFC entitlement, use the NFC scan/write buttons.
+3. Run the `Trakr` scheme.
+4. Sign in with an approved school Google account, or choose a local Student/Teacher demo.
 
-The deployment target is iOS 17. No third-party packages or credentials are required for the on-device MVP.
+The deployment target is iOS 17. Firebase and Google Sign-In are installed with Swift Package Manager.
+
+## Android
+
+```sh
+cd android
+./gradlew assembleDebug
+```
+
+Install `android/app/build/outputs/apk/debug/app-debug.apk` on an Android 8+ device, or open the `android` directory in Android Studio. The Compose app supports Google sign-in, NFC NDEF read/write, student checkout, teacher returns and enrollment, issue handling, FCM notifications, and complete local demo workflows.
 
 ## MVP behavior
 
@@ -21,19 +29,19 @@ The deployment target is iOS 17. No third-party packages or credentials are requ
 - Role-scoped in-app checkout, return, issue, and overdue notifications without leaking issue text.
 - Persistent on-device equipment, claim, issue, notification, idempotency, and audit records with backward-compatible decoding.
 - Live network reachability plus offline protection that preserves staged items.
-- Real Core NFC ISO 14443/NDEF text reading and writing.
+- Real Core NFC and Android NDEF reading/writing using branded `tr:` payloads.
 - Simulator demo controls for every workflow.
 
 ## Firebase backend
 
-The local `GearGuardStore` makes every workflow runnable without school-owned credentials. The `firebase/` directory supplies the production callable functions, scheduled overdue notifications, immutable audit writes, indexes, deny-by-default Security Rules, and emulator tests. Connecting school Google OAuth, APNs, Firebase app configuration, and the iOS Firebase SDK remains an environment-specific deployment step. See [production-integration.md](docs/production-integration.md).
+The configured development project is `trakr-sst-2026` in `asia-southeast1`. Google Authentication, iOS/Android SDK credentials, Firestore, prototype Security Rules, and indexes are configured. The `firebase/` directory supplies callable functions, scheduled overdue notifications, immutable audit writes, and emulator tests. See [production-integration.md](docs/production-integration.md).
 
 ## Test
 
 ```sh
 xcodebuild test \
-  -project GearGuard.xcodeproj \
-  -scheme GearGuard \
+  -project Trakr.xcodeproj \
+  -scheme Trakr \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
@@ -44,4 +52,11 @@ Validate the backend:
 ```sh
 bun install --cwd firebase/functions
 bun run --cwd firebase/functions verify
+```
+
+Validate Android:
+
+```sh
+cd android
+./gradlew testDebugUnitTest assembleDebug lintDebug
 ```

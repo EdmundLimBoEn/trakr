@@ -1,6 +1,6 @@
 # Production integration
 
-The repository includes the full single-device iOS workflow and the trusted Firebase implementation. The backend provides:
+The repository includes native iOS and Android workflows connected to the trusted Firebase implementation. The backend provides:
 
 - verified-domain role derivation and Auth custom claims;
 - device-token registration;
@@ -13,9 +13,9 @@ The repository includes the full single-device iOS workflow and the trusted Fire
 
 ## Deploy the backend
 
-1. Create development and production Firebase projects.
-2. Copy `.firebaserc.example` to `.firebaserc` and replace both project IDs.
-3. Enable Authentication with Google, Firestore, Functions, Cloud Scheduler, and Cloud Messaging.
+1. Use the configured `trakr-sst-2026` development project, and create a separate production project before a public launch.
+2. Add the production project to `.firebaserc`.
+3. Enable Authentication with Google, Firestore, Functions, Cloud Scheduler, Cloud Messaging, and App Check.
 4. From the repository root, run:
 
    ```sh
@@ -26,18 +26,16 @@ The repository includes the full single-device iOS workflow and the trusted Fire
 
 5. Set `OVERDUE_HOURS` when prompted or keep the default of 24.
 
-## Connect the school iOS environment
+## Native app credentials
 
-The credential-free target intentionally uses `GearGuardStore`, so reviewers can run every flow immediately. For a shared live pilot:
+The repository contains the development `GoogleService-Info.plist` and `google-services.json`; these identify Firebase apps but are not server credentials. Both clients refresh the Firebase ID token after `initializeUser`, preserve idempotency request IDs, and register their FCM installation.
 
-1. Add the Firebase Auth, Functions, Firestore, Messaging, and Google Sign-In Swift packages.
-2. Add the school project's `GoogleService-Info.plist` and reversed-client-ID URL type.
-3. Exchange the local store operations for the matching callable functions. Preserve each `requestID` for retries and refresh the Firebase ID token after `initializeUser` assigns the role claim.
-4. Register and rotate the FCM installation token through `registerDevice`.
-5. Enable Push Notifications and background remote notifications, then upload an APNs authentication key to Firebase.
-6. Enable NFC Tag Reading for the release App ID and sign the app on a physical device.
+Before distributing builds:
 
-The SwiftUI screens, validation, idempotency keys, Core NFC adapter, and domain models already match these callable contracts.
+1. Register App Check debug tokens for local development and enable DeviceCheck/App Attest plus Play Integrity for release.
+2. Upload the APNs authentication key and enable Push Notifications/background remote notifications on iOS.
+3. Add Android debug and release SHA-1/SHA-256 fingerprints to the Firebase Android app, then download the refreshed `google-services.json`.
+4. Enable NFC Tag Reading for the iOS App ID and sign on a physical device.
 
 ## Pilot checks
 
