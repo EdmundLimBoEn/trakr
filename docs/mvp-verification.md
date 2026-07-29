@@ -20,16 +20,16 @@ This matrix separates behavior proven in the credential-free iOS MVP from checks
 | Checkout, return, issue, overdue notifications | Notification scoping and overdue tests |
 | Persistent schema compatibility | legacy decode and snapshot round-trip tests |
 | Student and teacher simulator journeys | `TrakrUITests` |
-| Trusted role assignment and callable validation | `firebase/functions/src` and domain tests |
+| Trusted role assignment and mutation validation | Verified Auth email claims plus Firestore rules tests |
 | Firestore authorization boundary | Firebase Emulator Suite rules tests |
-| Atomic/idempotent server mutations | transactional callable implementations |
-| Cross-device push routing and overdue scheduling | FCM helpers and scheduled function |
+| Atomic/idempotent mutations | Native Firestore write batches and immutable request IDs |
+| Overdue visibility on Spark | In-app calculation and local notification tests |
 
 The following cannot be proven on the simulator:
 
 - NFC read/write behavior across physical tags and supported iPhones;
 - five physical tag scans in under three minutes;
 - Apple signing and production NFC entitlement approval;
-- school Google OAuth, deployed FCM/APNs delivery, and cross-device synchronization.
+- school Google OAuth, physical-device local notifications, and cross-device synchronization.
 
 Those checks are the physical-device and school-credential steps in `production-integration.md`.

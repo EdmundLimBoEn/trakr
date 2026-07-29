@@ -1,22 +1,21 @@
-# Production integration
+# Firebase Spark integration
 
-The repository includes native iOS and Android workflows connected to the trusted Firebase implementation. The backend provides:
+Trakr's native iOS and Android clients are designed to stay on Firebase's no-cost Spark plan. They use Google Authentication and direct Cloud Firestore access. Firestore Security Rules derive the role from Firebase's verified `email` claim:
 
-- verified-domain role derivation and Auth custom claims;
-- device-token registration;
-- equipment enrollment, editing, and tag replacement;
-- role-aware tag resolution;
-- atomic, idempotent checkout and return operations;
-- issue lifecycle updates and immutable checkout/return audit records;
-- generic FCM notifications and an hourly overdue job;
-- deny-by-default Firestore Security Rules and required indexes.
+- `@sst.edu.sg` is a teacher;
+- any subdomain of `@ssts.edu.sg` is a student;
+- unverified and unrelated accounts have no data access.
 
-## Deploy the backend
+Checkout, return, equipment enrollment, serial uniqueness, tag replacement, and issue changes use atomic Firestore write batches. Rules validate complete schemas, ownership, immutable fields, related records, state transitions, and the maximum 20-item checkout size.
 
-1. Use the configured `trakr-sst-2026` development project, and create a separate production project before a public launch.
-2. Add the production project to `.firebaserc`.
-3. Enable Authentication with Google, Firestore, Functions, Cloud Scheduler, Cloud Messaging, and App Check.
-4. From the repository root, run:
+## Deploy
+
+The configured development project is `trakr-sst-2026`; create a separate Firebase project before a public production launch.
+
+1. Keep the project on Spark.
+2. Enable Google under Authentication → Sign-in method.
+3. Create the default Firestore database in Native mode and `asia-southeast1`.
+4. Run:
 
    ```sh
    bun install --cwd firebase/functions
@@ -24,24 +23,28 @@ The repository includes native iOS and Android workflows connected to the truste
    bun run --cwd firebase/functions deploy -- --project development
    ```
 
-5. Set `OVERDUE_HOURS` when prompted or keep the default of 24.
+The deploy script publishes only Firestore rules and indexes. It does not deploy Functions or require billing.
 
-## Native app credentials
+## Native credentials
 
-The repository contains the development `GoogleService-Info.plist` and `google-services.json`; these identify Firebase apps but are not server credentials. Both clients refresh the Firebase ID token after `initializeUser`, preserve idempotency request IDs, and register their FCM installation.
+The checked-in development `GoogleService-Info.plist` and `google-services.json` identify the Firebase apps; they are not admin credentials. Before distribution:
 
-Before distributing builds:
+1. Register Android debug and release SHA-1/SHA-256 fingerprints, then refresh `google-services.json`.
+2. Enable NFC Tag Reading for the iOS App ID and sign on a physical device.
+3. Use separate Firebase app registrations and downloaded config files for production.
 
-1. Register App Check debug tokens for local development and enable DeviceCheck/App Attest plus Play Integrity for release.
-2. Upload the APNs authentication key and enable Push Notifications/background remote notifications on iOS.
-3. Add Android debug and release SHA-1/SHA-256 fingerprints to the Firebase Android app, then download the refreshed `google-services.json`.
-4. Enable NFC Tag Reading for the iOS App ID and sign on a physical device.
+## Spark limitations
+
+- There is no trusted scheduled overdue process. Each app calculates overdue state when it refreshes.
+- Device FCM tokens can be registered, but a mobile client cannot safely hold server credentials. Workflow alerts are local/in-app unless a trusted sender is added later.
+- Spark quotas apply. Watch Authentication and Firestore usage in the Firebase console during the pilot.
+- Client-generated request IDs and immutable batch documents make repeated confirmations safe, but offline Firestore replay should still be tested on physical devices.
 
 ## Pilot checks
 
-- Enroll all 20 tags and verify each tag on every supported device.
-- Test duplicate scans, invalid tags, interrupted network, and repeated confirmations.
-- Verify two simultaneous active claims on one item, then confirm one return closes both.
-- Confirm students cannot fetch another student's claim.
-- Verify generic notification payloads contain identifiers only.
-- Confirm a retired item cannot be checked out by calling the backend directly.
+- Enroll all tags and verify each one on supported devices.
+- Test duplicate scans, invalid tags, interrupted networks, and repeated confirmations.
+- Confirm students cannot query another student's claims or issues.
+- Confirm teachers can return every active claim on an item.
+- Confirm retired equipment cannot be checked out using direct Firestore calls.
+- Review the deployed rules again before broadly sharing the app.

@@ -1,4 +1,3 @@
-import FirebaseAppCheck
 import FirebaseCore
 import GoogleSignIn
 import SwiftUI
@@ -9,11 +8,6 @@ struct TrakrApp: App {
     @StateObject private var connectivity = ConnectivityMonitor()
 
     init() {
-#if DEBUG
-        AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
-#else
-        AppCheck.setAppCheckProviderFactory(DeviceCheckProviderFactory())
-#endif
         FirebaseApp.configure()
         _store = StateObject(wrappedValue: TrakrStore())
     }

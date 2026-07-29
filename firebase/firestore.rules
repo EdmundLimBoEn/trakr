@@ -3,16 +3,16 @@ rules_version = '2';
 // ===============================================================
 // Assumed data model
 // ===============================================================
-// users/{uid}: uid, email, displayName, role, emailDomain, active,
-//   createdAt, updatedAt, lastLoginAt. Contains PII; owner-readable.
-// users/{uid}/devices/{installationId}: installationId, platform,
-//   fcmToken, notificationsEnabled, updatedAt. Contains a private token.
-// equipment/{id}: inventory identity, serial, active tag, status, audit fields.
-// claims/{id}: checkout/return state, student UID/email, condition, timestamps.
-// issues/{id}: claim/equipment/student references, text, state, timestamps.
-// auditEvents/{id}: trusted immutable workflow audit records.
-// All client writes are intentionally denied. Trusted callable functions use
-// the Admin SDK and validate each write before it reaches Firestore.
+// users/{uid}: private profile; owner-readable and owner-writable.
+// users/{uid}/devices/{installationId}: private messaging registration.
+// equipment/{id}: non-PII inventory record.
+// tags/{tagId}: NFC payload-to-equipment mapping.
+// equipmentSerials/{normalizedSerial}: uniqueness guard.
+// checkoutBatches/{id}: immutable student checkout header.
+// claims/{id}: immutable student checkout plus teacher-only return transition.
+// issues/{id}: student-created report plus teacher-managed status.
+// returnBatches/{id}: immutable teacher return header.
+// auditEvents and every unspecified path: no client writes.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -20,76 +20,368 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isVerified() {
+      return isAuthenticated()
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true;
+    }
+
+    function authEmail() {
+      return isVerified() ? request.auth.token.email.lower() : "";
+    }
+
+    function isTeacher() {
+      return isVerified() && authEmail().matches("^[^@]+@sst[.]edu[.]sg$");
+    }
+
+    function isStudent() {
+      return isVerified() && authEmail().matches("^[^@]+@[^@]+[.]ssts[.]edu[.]sg$");
+    }
+
+    function isApproved() {
+      return isTeacher() || isStudent();
+    }
+
+    function authRole() {
+      return isTeacher() ? "teacher" : (isStudent() ? "student" : "");
+    }
+
     function isOwner(uid) {
-      return isAuthenticated() && request.auth.uid == uid;
+      return isApproved() && request.auth.uid == uid;
     }
 
     function uidUnchanged(uid) {
-      return isAuthenticated() && request.resource.data.uid == uid;
+      return request.resource.data.uid == uid
+        && request.resource.data.uid == request.auth.uid;
     }
 
     function uidNotModified() {
       return request.resource.data.uid == resource.data.uid;
     }
 
+    function shortString(value, minimum, maximum) {
+      return value is string && value.size() >= minimum && value.size() <= maximum;
+    }
+
     function isValidUser(data) {
-      return data.keys().hasOnly([
+      return data.keys().hasAll([
           "uid", "email", "displayName", "role", "emailDomain", "active",
           "createdAt", "updatedAt", "lastLoginAt"
         ])
-        && data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128
-        && data.email is string && data.email.size() > 3 && data.email.size() <= 254
+        && data.keys().hasOnly([
+          "uid", "email", "displayName", "role", "emailDomain", "active",
+          "createdAt", "updatedAt", "lastLoginAt"
+        ])
+        && shortString(data.uid, 1, 128)
+        && shortString(data.email, 3, 254)
+        && data.email.lower() == authEmail()
         && data.displayName is string && data.displayName.size() <= 100
-        && data.role in ["student", "teacher"]
-        && data.emailDomain is string && data.emailDomain.size() <= 253
+        && data.role == authRole()
+        && shortString(data.emailDomain, 3, 253)
+        && authEmail().matches("^[^@]+@" + data.emailDomain + "$")
         && data.active is bool
         && data.createdAt is timestamp
         && data.updatedAt is timestamp
         && data.lastLoginAt is timestamp;
     }
 
-    function role() {
-      return isAuthenticated() ? request.auth.token.role : null;
+    function isValidDevice(data, deviceId) {
+      return data.keys().hasAll([
+          "installationId", "platform", "fcmToken", "notificationsEnabled", "updatedAt"
+        ])
+        && data.keys().hasOnly([
+          "installationId", "platform", "fcmToken", "notificationsEnabled", "updatedAt"
+        ])
+        && data.installationId == deviceId
+        && shortString(data.installationId, 1, 128)
+        && data.platform in ["ios", "android"]
+        && shortString(data.fcmToken, 1, 4096)
+        && data.notificationsEnabled is bool
+        && data.updatedAt is timestamp;
     }
 
-    function isTeacher() {
-      return role() == "teacher";
+    function isValidEquipment(data, equipmentId) {
+      return data.keys().hasAll([
+          "equipmentId", "name", "internalSerial", "normalizedInternalSerial",
+          "activeTagId", "status", "enrolledBy", "enrolledAt", "updatedBy", "updatedAt"
+        ])
+        && data.keys().hasOnly([
+          "equipmentId", "name", "internalSerial", "normalizedInternalSerial",
+          "activeTagId", "status", "enrolledBy", "enrolledAt", "updatedBy", "updatedAt"
+        ])
+        && data.equipmentId == equipmentId
+        && shortString(data.name, 1, 100)
+        && shortString(data.internalSerial, 1, 50)
+        && data.normalizedInternalSerial.matches("^[A-Z0-9_-]{1,50}$")
+        && data.activeTagId.matches("^tr:[0-9A-HJKMNP-TV-Z]{26}$")
+        && data.status in ["active", "retired"]
+        && shortString(data.enrolledBy, 1, 128)
+        && data.enrolledAt is timestamp
+        && shortString(data.updatedBy, 1, 128)
+        && data.updatedAt is timestamp;
     }
 
-    function isStudent() {
-      return role() == "student";
+    function isValidTag(data, tagId) {
+      return data.keys().hasAll([
+          "tagId", "equipmentId", "hardwareUidHex", "chipFamily", "status",
+          "enrolledBy", "enrolledAt", "replacedAt", "replacedBy"
+        ])
+        && data.keys().hasOnly([
+          "tagId", "equipmentId", "hardwareUidHex", "chipFamily", "status",
+          "enrolledBy", "enrolledAt", "replacedAt", "replacedBy"
+        ])
+        && data.tagId == tagId
+        && tagId.matches("^tr:[0-9A-HJKMNP-TV-Z]{26}$")
+        && shortString(data.equipmentId, 1, 128)
+        && data.hardwareUidHex.matches("^[0-9A-F]{2,64}$")
+        && data.chipFamily is string && data.chipFamily.size() <= 50
+        && data.status in ["active", "replaced"]
+        && shortString(data.enrolledBy, 1, 128)
+        && data.enrolledAt is timestamp
+        && (data.replacedAt == null || data.replacedAt is timestamp)
+        && (data.replacedBy == null || shortString(data.replacedBy, 1, 128));
+    }
+
+    function isValidSerialGuard(data, serialId) {
+      return data.keys().hasAll(["equipmentId", "normalizedSerial", "createdAt"])
+        && data.keys().hasOnly(["equipmentId", "normalizedSerial", "createdAt"])
+        && data.normalizedSerial == serialId
+        && serialId.matches("^[A-Z0-9_-]{1,50}$")
+        && shortString(data.equipmentId, 1, 128)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCheckoutBatch(data, batchId) {
+      return data.keys().hasAll(["batchId", "studentUid", "studentEmail", "itemCount", "createdAt"])
+        && data.keys().hasOnly(["batchId", "studentUid", "studentEmail", "itemCount", "createdAt"])
+        && data.batchId == batchId
+        && shortString(data.studentUid, 1, 128)
+        && shortString(data.studentEmail, 3, 254)
+        && data.itemCount is int && data.itemCount >= 1 && data.itemCount <= 20
+        && data.createdAt is timestamp;
+    }
+
+    function isValidClaim(data, claimId) {
+      return data.keys().hasAll([
+          "claimId", "checkoutBatchId", "returnBatchId", "equipmentId",
+          "tagIdAtCheckout", "studentUid", "studentEmail", "condition", "issueText",
+          "status", "checkedOutAt", "returnedAt", "returnedByTeacherUid",
+          "overdueNotificationSentAt"
+        ])
+        && data.keys().hasOnly([
+          "claimId", "checkoutBatchId", "returnBatchId", "equipmentId",
+          "tagIdAtCheckout", "studentUid", "studentEmail", "condition", "issueText",
+          "status", "checkedOutAt", "returnedAt", "returnedByTeacherUid",
+          "overdueNotificationSentAt"
+        ])
+        && data.claimId == claimId
+        && shortString(data.checkoutBatchId, 1, 128)
+        && (data.returnBatchId == null || shortString(data.returnBatchId, 1, 128))
+        && shortString(data.equipmentId, 1, 128)
+        && data.tagIdAtCheckout.matches("^tr:[0-9A-HJKMNP-TV-Z]{26}$")
+        && shortString(data.studentUid, 1, 128)
+        && shortString(data.studentEmail, 3, 254)
+        && data.condition in ["no_issues", "has_issue"]
+        && (data.issueText == null || (data.issueText is string && data.issueText.size() >= 1 && data.issueText.size() <= 500))
+        && ((data.condition == "no_issues" && data.issueText == null)
+          || (data.condition == "has_issue" && data.issueText is string))
+        && data.status in ["active", "returned"]
+        && data.checkedOutAt is timestamp
+        && (data.returnedAt == null || data.returnedAt is timestamp)
+        && (data.returnedByTeacherUid == null || shortString(data.returnedByTeacherUid, 1, 128))
+        && (data.overdueNotificationSentAt == null || data.overdueNotificationSentAt is timestamp);
+    }
+
+    function isValidIssue(data, issueId) {
+      return data.keys().hasAll([
+          "issueId", "claimId", "equipmentId", "reportedByStudentUid",
+          "text", "status", "reportedAt", "resolvedAt", "resolvedByTeacherUid"
+        ])
+        && data.keys().hasOnly([
+          "issueId", "claimId", "equipmentId", "reportedByStudentUid",
+          "text", "status", "reportedAt", "resolvedAt", "resolvedByTeacherUid"
+        ])
+        && data.issueId == issueId
+        && shortString(data.claimId, 1, 128)
+        && shortString(data.equipmentId, 1, 128)
+        && shortString(data.reportedByStudentUid, 1, 128)
+        && shortString(data.text, 1, 500)
+        && data.status in ["open", "acknowledged", "resolved"]
+        && data.reportedAt is timestamp
+        && (data.resolvedAt == null || data.resolvedAt is timestamp)
+        && (data.resolvedByTeacherUid == null || shortString(data.resolvedByTeacherUid, 1, 128));
+    }
+
+    function isValidReturnBatch(data, batchId) {
+      return data.keys().hasAll(["batchId", "teacherUid", "claimCount", "createdAt"])
+        && data.keys().hasOnly(["batchId", "teacherUid", "claimCount", "createdAt"])
+        && data.batchId == batchId
+        && shortString(data.teacherUid, 1, 128)
+        && data.claimCount is int && data.claimCount >= 0 && data.claimCount <= 400
+        && data.createdAt is timestamp;
     }
 
     match /users/{uid} {
       allow read: if isOwner(uid);
-      allow write: if false;
+      allow create: if isOwner(uid)
+        && isValidUser(request.resource.data)
+        && uidUnchanged(uid)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.lastLoginAt == request.time;
+      allow update: if isOwner(uid)
+        && isValidUser(request.resource.data)
+        && uidNotModified()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["displayName", "active", "updatedAt", "lastLoginAt"])
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.lastLoginAt == request.time;
+      allow delete: if false;
 
       match /devices/{deviceId} {
         allow read: if isOwner(uid);
-        allow write: if false;
+        allow create, update: if isOwner(uid)
+          && exists(/databases/$(database)/documents/users/$(uid))
+          && isValidDevice(request.resource.data, deviceId)
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(uid);
       }
     }
 
     match /equipment/{equipmentId} {
-      allow read: if isTeacher();
-      allow write: if false;
+      allow read: if isApproved();
+      allow create: if isTeacher()
+        && isValidEquipment(request.resource.data, equipmentId)
+        && request.resource.data.status == "active"
+        && request.resource.data.enrolledBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.enrolledAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && getAfter(/databases/$(database)/documents/tags/$(request.resource.data.activeTagId)).data.equipmentId == equipmentId
+        && getAfter(/databases/$(database)/documents/equipmentSerials/$(request.resource.data.normalizedInternalSerial)).data.equipmentId == equipmentId;
+      allow update: if isTeacher()
+        && isValidEquipment(request.resource.data, equipmentId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["name", "internalSerial", "normalizedInternalSerial", "activeTagId", "status", "updatedBy", "updatedAt"])
+        && request.resource.data.equipmentId == resource.data.equipmentId
+        && request.resource.data.enrolledBy == resource.data.enrolledBy
+        && request.resource.data.enrolledAt == resource.data.enrolledAt
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time
+        && (request.resource.data.activeTagId == resource.data.activeTagId
+          || getAfter(/databases/$(database)/documents/tags/$(request.resource.data.activeTagId)).data.equipmentId == equipmentId)
+        && (request.resource.data.normalizedInternalSerial == resource.data.normalizedInternalSerial
+          || getAfter(/databases/$(database)/documents/equipmentSerials/$(request.resource.data.normalizedInternalSerial)).data.equipmentId == equipmentId);
+      allow delete: if false;
     }
 
     match /tags/{tagId} {
+      allow read: if isApproved();
+      allow create: if isTeacher()
+        && isValidTag(request.resource.data, tagId)
+        && request.resource.data.status == "active"
+        && request.resource.data.enrolledBy == request.auth.uid
+        && request.resource.data.enrolledAt == request.time
+        && request.resource.data.replacedAt == null
+        && request.resource.data.replacedBy == null
+        && getAfter(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.activeTagId == tagId;
+      allow update: if isTeacher()
+        && isValidTag(request.resource.data, tagId)
+        && resource.data.status == "active"
+        && request.resource.data.status == "replaced"
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["status", "replacedAt", "replacedBy"])
+        && request.resource.data.replacedAt == request.time
+        && request.resource.data.replacedBy == request.auth.uid
+        && getAfter(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.activeTagId != tagId;
+      allow delete: if false;
+    }
+
+    match /equipmentSerials/{serialId} {
       allow read: if isTeacher();
-      allow write: if false;
+      allow create: if isTeacher()
+        && isValidSerialGuard(request.resource.data, serialId)
+        && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.normalizedInternalSerial == serialId;
+      allow update: if false;
+      allow delete: if isTeacher()
+        && getAfter(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.normalizedInternalSerial != serialId;
+    }
+
+    match /checkoutBatches/{batchId} {
+      allow read: if isTeacher() || (isStudent() && resource.data.studentUid == request.auth.uid);
+      allow create: if isStudent()
+        && isValidCheckoutBatch(request.resource.data, batchId)
+        && request.resource.data.studentUid == request.auth.uid
+        && request.resource.data.studentEmail.lower() == authEmail()
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
     }
 
     match /claims/{claimId} {
-      allow read: if isTeacher()
-        || (isStudent() && resource.data.studentUid == request.auth.uid);
-      allow write: if false;
+      allow read: if isTeacher() || (isStudent() && resource.data.studentUid == request.auth.uid);
+      allow create: if isStudent()
+        && isValidClaim(request.resource.data, claimId)
+        && request.resource.data.studentUid == request.auth.uid
+        && request.resource.data.studentEmail.lower() == authEmail()
+        && request.resource.data.status == "active"
+        && request.resource.data.returnBatchId == null
+        && request.resource.data.returnedAt == null
+        && request.resource.data.returnedByTeacherUid == null
+        && request.resource.data.overdueNotificationSentAt == null
+        && request.resource.data.checkedOutAt == request.time
+        && get(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.status == "active"
+        && get(/databases/$(database)/documents/tags/$(request.resource.data.tagIdAtCheckout)).data.status == "active"
+        && get(/databases/$(database)/documents/tags/$(request.resource.data.tagIdAtCheckout)).data.equipmentId == request.resource.data.equipmentId
+        && getAfter(/databases/$(database)/documents/checkoutBatches/$(request.resource.data.checkoutBatchId)).data.studentUid == request.auth.uid;
+      allow update: if isTeacher()
+        && isValidClaim(request.resource.data, claimId)
+        && resource.data.status == "active"
+        && request.resource.data.status == "returned"
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["status", "returnBatchId", "returnedAt", "returnedByTeacherUid"])
+        && request.resource.data.returnBatchId is string
+        && request.resource.data.returnedAt == request.time
+        && request.resource.data.returnedByTeacherUid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/returnBatches/$(request.resource.data.returnBatchId)).data.teacherUid == request.auth.uid;
+      allow delete: if false;
     }
 
     match /issues/{issueId} {
       allow read: if isTeacher()
         || (isStudent() && resource.data.reportedByStudentUid == request.auth.uid);
-      allow write: if false;
+      allow create: if isStudent()
+        && isValidIssue(request.resource.data, issueId)
+        && request.resource.data.reportedByStudentUid == request.auth.uid
+        && request.resource.data.status == "open"
+        && request.resource.data.reportedAt == request.time
+        && request.resource.data.resolvedAt == null
+        && request.resource.data.resolvedByTeacherUid == null
+        && getAfter(/databases/$(database)/documents/claims/$(request.resource.data.claimId)).data.studentUid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/claims/$(request.resource.data.claimId)).data.equipmentId == request.resource.data.equipmentId
+        && getAfter(/databases/$(database)/documents/claims/$(request.resource.data.claimId)).data.condition == "has_issue"
+        && getAfter(/databases/$(database)/documents/claims/$(request.resource.data.claimId)).data.issueText == request.resource.data.text;
+      allow update: if isTeacher()
+        && isValidIssue(request.resource.data, issueId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(["status", "resolvedAt", "resolvedByTeacherUid"])
+        && request.resource.data.status in ["open", "acknowledged", "resolved"]
+        && ((request.resource.data.status == "resolved"
+            && request.resource.data.resolvedAt == request.time
+            && request.resource.data.resolvedByTeacherUid == request.auth.uid)
+          || (request.resource.data.status != "resolved"
+            && request.resource.data.resolvedAt == null
+            && request.resource.data.resolvedByTeacherUid == null));
+      allow delete: if false;
+    }
+
+    match /returnBatches/{batchId} {
+      allow read: if isTeacher();
+      allow create: if isTeacher()
+        && isValidReturnBatch(request.resource.data, batchId)
+        && request.resource.data.teacherUid == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
     }
 
     match /auditEvents/{eventId} {

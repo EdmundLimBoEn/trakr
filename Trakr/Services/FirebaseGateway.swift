@@ -1,6 +1,5 @@
 import FirebaseAuth
 @preconcurrency import FirebaseFirestore
-import FirebaseFunctions
 import FirebaseInstallations
 import FirebaseMessaging
 import GoogleSignIn
@@ -9,7 +8,6 @@ import UIKit
 @MainActor
 final class FirebaseGateway {
     private lazy var database = Firestore.firestore()
-    private lazy var functions = Functions.functions(region: "asia-southeast1")
 
     var currentUser: GearUser? {
         guard let user = Auth.auth().currentUser, let email = user.email?.lowercased(),
@@ -22,7 +20,6 @@ final class FirebaseGateway {
         )
     }
 
-    @MainActor
     func signIn() async throws -> GearUser {
         guard let presenting = UIApplication.shared.trakrPresentingViewController else {
             throw FirebaseGatewayError.noPresentingViewController
@@ -36,16 +33,23 @@ final class FirebaseGateway {
             accessToken: result.user.accessToken.tokenString
         )
         let authentication = try await Auth.auth().signIn(with: credential)
-        _ = try await functions.httpsCallable("initializeUser").call([:])
-        _ = try await authentication.user.getIDTokenResult(forcingRefresh: true)
+        guard authentication.user.isEmailVerified else {
+            try? Auth.auth().signOut()
+            throw FirebaseGatewayError.unverifiedEmail
+        }
+
         let email = authentication.user.email?.lowercased() ?? ""
         let role = try RoleDeriver.role(for: email)
+        let displayName = authentication.user.displayName
+            ?? email.split(separator: "@").first.map(String.init)
+            ?? role.title
         let user = GearUser(
             id: authentication.user.uid,
             email: email,
-            displayName: authentication.user.displayName ?? email.split(separator: "@").first.map(String.init) ?? role.title,
+            displayName: displayName,
             role: role
         )
+        try await upsertProfile(user)
         Task { try? await registerDevice() }
         return user
     }
@@ -58,152 +62,286 @@ final class FirebaseGateway {
     func snapshot(for user: GearUser) async throws -> StoreSnapshot {
         async let claimDocuments = claimsQuery(for: user).getDocuments()
         async let issueDocuments = issuesQuery(for: user).getDocuments()
-        async let equipmentDocuments: QuerySnapshot? = user.role == .teacher
-            ? database.collection("equipment").getDocuments()
-            : nil
+        async let equipmentDocuments = database.collection("equipment").getDocuments()
 
         let (claimSnapshot, issueSnapshot, equipmentSnapshot) = try await (
             claimDocuments,
             issueDocuments,
             equipmentDocuments
         )
-        let equipment = equipmentSnapshot?.documents.compactMap(Self.equipment(from:)) ?? []
-        let claims = claimSnapshot.documents.compactMap(Self.claim(from:))
-        let issues = issueSnapshot.documents.compactMap(Self.issue(from:))
-        return StoreSnapshot(equipment: equipment, claims: claims, issues: issues)
+        return StoreSnapshot(
+            equipment: equipmentSnapshot.documents.compactMap(Self.equipment(from:)),
+            claims: claimSnapshot.documents.compactMap(Self.claim(from:)),
+            issues: issueSnapshot.documents.compactMap(Self.issue(from:))
+        )
     }
 
     func resolve(tagID: String) async throws -> Equipment {
-        let result = try await functions.httpsCallable("resolveTags").call(["tagIds": [tagID]])
-        guard let payload = result.data as? [String: Any],
-              let first = (payload["results"] as? [[String: Any]])?.first else {
-            throw TrakrError.unknownTag
+        let tag = try await database.collection("tags").document(tagID).getDocument()
+        guard tag.exists else { throw TrakrError.unknownTag }
+        guard tag.get("status") as? String == "active" else { throw TrakrError.inactiveTag }
+        guard let equipmentID = tag.get("equipmentId") as? String else { throw TrakrError.unknownTag }
+        let equipmentDocument = try await database.collection("equipment").document(equipmentID).getDocument()
+        guard let equipment = Self.equipment(from: equipmentDocument), equipment.isActive else {
+            throw TrakrError.inactiveTag
         }
-        guard first["status"] as? String == "active" else {
-            throw first["status"] as? String == "inactive" ? TrakrError.inactiveTag : TrakrError.unknownTag
-        }
-        guard let raw = first["equipment"] as? [String: Any],
-              let id = raw["equipmentId"] as? String,
-              let name = raw["name"] as? String else {
-            throw TrakrError.unknownTag
-        }
-        return Equipment(
-            id: id,
-            name: name,
-            internalSerial: raw["internalSerial"] as? String ?? "",
-            tagID: tagID,
-            hardwareUID: "",
-            isActive: true,
-            enrolledAt: .now
-        )
+        return equipment
     }
 
     func checkout(items: [StagedCheckoutItem], requestID: String) async throws -> CheckoutReceipt {
-        let payload = items.map { item -> [String: Any] in
-            var value: [String: Any] = [
-                "tagId": item.equipment.tagID,
+        guard let user = currentUser, user.role == .student else { throw FirebaseGatewayError.studentRequired }
+        guard !items.isEmpty else { throw TrakrError.emptyBatch }
+        guard items.count <= 20 else { throw TrakrError.batchTooLarge }
+
+        let batch = database.batch()
+        let batchReference = database.collection("checkoutBatches").document(requestID)
+        batch.setData([
+            "batchId": requestID,
+            "studentUid": user.id,
+            "studentEmail": user.email,
+            "itemCount": items.count,
+            "createdAt": FieldValue.serverTimestamp(),
+        ], forDocument: batchReference)
+
+        var claimIDs: [String] = []
+        for item in items {
+            let issueText = item.issueText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if item.hasIssue && issueText.isEmpty { throw TrakrError.invalidIssue }
+            let claimReference = database.collection("claims").document()
+            claimIDs.append(claimReference.documentID)
+            batch.setData([
+                "claimId": claimReference.documentID,
+                "checkoutBatchId": requestID,
+                "returnBatchId": NSNull(),
+                "equipmentId": item.equipment.id,
+                "tagIdAtCheckout": item.equipment.tagID,
+                "studentUid": user.id,
+                "studentEmail": user.email,
                 "condition": item.hasIssue ? "has_issue" : "no_issues",
-            ]
-            if item.hasIssue { value["issueText"] = item.issueText.trimmingCharacters(in: .whitespacesAndNewlines) }
-            return value
+                "issueText": item.hasIssue ? issueText : NSNull(),
+                "status": "active",
+                "checkedOutAt": FieldValue.serverTimestamp(),
+                "returnedAt": NSNull(),
+                "returnedByTeacherUid": NSNull(),
+                "overdueNotificationSentAt": NSNull(),
+            ], forDocument: claimReference)
+
+            if item.hasIssue {
+                let issueReference = database.collection("issues").document()
+                batch.setData([
+                    "issueId": issueReference.documentID,
+                    "claimId": claimReference.documentID,
+                    "equipmentId": item.equipment.id,
+                    "reportedByStudentUid": user.id,
+                    "text": issueText,
+                    "status": "open",
+                    "reportedAt": FieldValue.serverTimestamp(),
+                    "resolvedAt": NSNull(),
+                    "resolvedByTeacherUid": NSNull(),
+                ], forDocument: issueReference)
+            }
         }
-        let result = try await functions.httpsCallable("confirmCheckout").call([
-            "clientRequestId": requestID,
-            "items": payload,
-        ])
-        guard let raw = result.data as? [String: Any],
-              let batchID = raw["checkoutBatchId"] as? String else {
-            throw FirebaseGatewayError.invalidResponse
-        }
-        return CheckoutReceipt(
-            id: batchID,
-            equipment: items.map(\.equipment),
-            claimIDs: raw["claimIds"] as? [String] ?? [],
-            timestamp: .now
-        )
+        try await batch.commit()
+        return CheckoutReceipt(id: requestID, equipment: items.map(\.equipment), claimIDs: claimIDs, timestamp: .now)
     }
 
     func returnItems(_ items: [ReturnCandidate], requestID: String) async throws -> ReturnReceipt {
-        let result = try await functions.httpsCallable("confirmReturn").call([
-            "clientRequestId": requestID,
-            "tagIds": items.map(\.equipment.tagID),
-        ])
-        guard let raw = result.data as? [String: Any] else { throw FirebaseGatewayError.invalidResponse }
-        let ids = raw["claimIds"] as? [String] ?? []
-        return ReturnReceipt(
-            batchID: raw["returnBatchId"] as? String ?? requestID,
-            resolvedClaimIDs: ids,
-            resolvedCount: ids.count
-        )
+        guard let user = currentUser, user.role == .teacher else { throw FirebaseGatewayError.teacherRequired }
+        let claimIDs = Array(Set(items.flatMap(\.activeClaims).map(\.id)))
+        let batch = database.batch()
+        batch.setData([
+            "batchId": requestID,
+            "teacherUid": user.id,
+            "claimCount": claimIDs.count,
+            "createdAt": FieldValue.serverTimestamp(),
+        ], forDocument: database.collection("returnBatches").document(requestID))
+        for claimID in claimIDs {
+            batch.updateData([
+                "status": "returned",
+                "returnBatchId": requestID,
+                "returnedAt": FieldValue.serverTimestamp(),
+                "returnedByTeacherUid": user.id,
+            ], forDocument: database.collection("claims").document(claimID))
+        }
+        try await batch.commit()
+        return ReturnReceipt(batchID: requestID, resolvedClaimIDs: claimIDs, resolvedCount: claimIDs.count)
     }
 
     func enroll(name: String, serial: String, tagID: String, hardwareUID: String) async throws {
-        _ = try await functions.httpsCallable("enrollEquipment").call([
-            "name": name,
-            "internalSerial": serial,
+        guard let user = currentUser, user.role == .teacher else { throw FirebaseGatewayError.teacherRequired }
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (1...100).contains(cleanName.count) else { throw TrakrError.invalidName }
+        let cleanSerial = try Self.normalizedSerial(serial)
+        let equipmentReference = database.collection("equipment").document()
+        let batch = database.batch()
+        batch.setData([
+            "equipmentId": equipmentReference.documentID,
+            "name": cleanName,
+            "internalSerial": cleanSerial,
+            "normalizedInternalSerial": cleanSerial,
+            "activeTagId": tagID,
+            "status": "active",
+            "enrolledBy": user.id,
+            "enrolledAt": FieldValue.serverTimestamp(),
+            "updatedBy": user.id,
+            "updatedAt": FieldValue.serverTimestamp(),
+        ], forDocument: equipmentReference)
+        batch.setData([
             "tagId": tagID,
-            "hardwareUidHex": hardwareUID,
+            "equipmentId": equipmentReference.documentID,
+            "hardwareUidHex": hardwareUID.uppercased(),
             "chipFamily": "NFC Forum Type 2",
-        ])
+            "status": "active",
+            "enrolledBy": user.id,
+            "enrolledAt": FieldValue.serverTimestamp(),
+            "replacedAt": NSNull(),
+            "replacedBy": NSNull(),
+        ], forDocument: database.collection("tags").document(tagID))
+        batch.setData([
+            "equipmentId": equipmentReference.documentID,
+            "normalizedSerial": cleanSerial,
+            "createdAt": FieldValue.serverTimestamp(),
+        ], forDocument: database.collection("equipmentSerials").document(cleanSerial))
+        try await batch.commit()
     }
 
     func updateEquipment(id: String, name: String, serial: String, isActive: Bool) async throws {
-        _ = try await functions.httpsCallable("editEquipment").call([
-            "equipmentId": id,
-            "name": name,
-            "internalSerial": serial,
+        guard let user = currentUser, user.role == .teacher else { throw FirebaseGatewayError.teacherRequired }
+        let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (1...100).contains(cleanName.count) else { throw TrakrError.invalidName }
+        let reference = database.collection("equipment").document(id)
+        let existing = try await reference.getDocument()
+        guard existing.exists, let oldSerial = existing.get("normalizedInternalSerial") as? String else {
+            throw FirebaseGatewayError.missingEquipment
+        }
+        let cleanSerial = try Self.normalizedSerial(serial)
+        let batch = database.batch()
+        if cleanSerial != oldSerial {
+            batch.setData([
+                "equipmentId": id,
+                "normalizedSerial": cleanSerial,
+                "createdAt": FieldValue.serverTimestamp(),
+            ], forDocument: database.collection("equipmentSerials").document(cleanSerial))
+            batch.deleteDocument(database.collection("equipmentSerials").document(oldSerial))
+        }
+        batch.updateData([
+            "name": cleanName,
+            "internalSerial": cleanSerial,
+            "normalizedInternalSerial": cleanSerial,
             "status": isActive ? "active" : "retired",
-        ])
+            "updatedBy": user.id,
+            "updatedAt": FieldValue.serverTimestamp(),
+        ], forDocument: reference)
+        try await batch.commit()
     }
 
     func replaceTag(equipmentID: String, tagID: String, hardwareUID: String) async throws {
-        _ = try await functions.httpsCallable("replaceTag").call([
-            "equipmentId": equipmentID,
+        guard let user = currentUser, user.role == .teacher else { throw FirebaseGatewayError.teacherRequired }
+        let equipmentReference = database.collection("equipment").document(equipmentID)
+        let equipment = try await equipmentReference.getDocument()
+        guard let oldTagID = equipment.get("activeTagId") as? String else {
+            throw FirebaseGatewayError.missingEquipment
+        }
+        let batch = database.batch()
+        batch.updateData([
+            "status": "replaced",
+            "replacedAt": FieldValue.serverTimestamp(),
+            "replacedBy": user.id,
+        ], forDocument: database.collection("tags").document(oldTagID))
+        batch.setData([
             "tagId": tagID,
-            "hardwareUidHex": hardwareUID,
+            "equipmentId": equipmentID,
+            "hardwareUidHex": hardwareUID.uppercased(),
             "chipFamily": "NFC Forum Type 2",
-        ])
+            "status": "active",
+            "enrolledBy": user.id,
+            "enrolledAt": FieldValue.serverTimestamp(),
+            "replacedAt": NSNull(),
+            "replacedBy": NSNull(),
+        ], forDocument: database.collection("tags").document(tagID))
+        batch.updateData([
+            "activeTagId": tagID,
+            "status": "active",
+            "updatedBy": user.id,
+            "updatedAt": FieldValue.serverTimestamp(),
+        ], forDocument: equipmentReference)
+        try await batch.commit()
     }
 
     func updateIssue(id: String, status: IssueStatus) async throws {
-        _ = try await functions.httpsCallable("updateIssue").call([
-            "issueId": id,
+        guard let user = currentUser, user.role == .teacher else { throw FirebaseGatewayError.teacherRequired }
+        try await database.collection("issues").document(id).updateData([
             "status": status.rawValue,
+            "resolvedAt": status == .resolved ? FieldValue.serverTimestamp() : NSNull(),
+            "resolvedByTeacherUid": status == .resolved ? user.id : NSNull(),
         ])
+    }
+
+    private func upsertProfile(_ user: GearUser) async throws {
+        let reference = database.collection("users").document(user.id)
+        let snapshot = try await reference.getDocument()
+        if snapshot.exists {
+            try await reference.updateData([
+                "displayName": user.displayName,
+                "active": true,
+                "updatedAt": FieldValue.serverTimestamp(),
+                "lastLoginAt": FieldValue.serverTimestamp(),
+            ])
+        } else {
+            try await reference.setData([
+                "uid": user.id,
+                "email": user.email,
+                "displayName": user.displayName,
+                "role": user.role.rawValue,
+                "emailDomain": user.email.split(separator: "@").last.map(String.init) ?? "",
+                "active": true,
+                "createdAt": FieldValue.serverTimestamp(),
+                "updatedAt": FieldValue.serverTimestamp(),
+                "lastLoginAt": FieldValue.serverTimestamp(),
+            ])
+        }
     }
 
     private func claimsQuery(for user: GearUser) -> Query {
-        if user.role == .teacher {
-            return database.collection("claims").order(by: "checkedOutAt", descending: true)
-        }
-        return database.collection("claims")
-            .whereField("studentUid", isEqualTo: user.id)
-            .order(by: "checkedOutAt", descending: true)
+        user.role == .teacher
+            ? database.collection("claims").order(by: "checkedOutAt", descending: true)
+            : database.collection("claims")
+                .whereField("studentUid", isEqualTo: user.id)
+                .order(by: "checkedOutAt", descending: true)
     }
 
     private func issuesQuery(for user: GearUser) -> Query {
-        if user.role == .teacher {
-            return database.collection("issues").order(by: "reportedAt", descending: true)
-        }
-        return database.collection("issues")
-            .whereField("reportedByStudentUid", isEqualTo: user.id)
-            .order(by: "reportedAt", descending: true)
+        user.role == .teacher
+            ? database.collection("issues").order(by: "reportedAt", descending: true)
+            : database.collection("issues")
+                .whereField("reportedByStudentUid", isEqualTo: user.id)
+                .order(by: "reportedAt", descending: true)
     }
 
     private func registerDevice() async throws {
+        guard let user = currentUser else { return }
         let installationID = try await Installations.installations().installationID()
         let token = try await Messaging.messaging().token()
-        _ = try await functions.httpsCallable("registerDevice").call([
-            "installationId": installationID,
-            "fcmToken": token,
-            "platform": "ios",
-            "notificationsEnabled": true,
-        ])
+        try await database.collection("users").document(user.id)
+            .collection("devices").document(installationID).setData([
+                "installationId": installationID,
+                "fcmToken": token,
+                "platform": "ios",
+                "notificationsEnabled": true,
+                "updatedAt": FieldValue.serverTimestamp(),
+            ])
     }
 
-    private static func equipment(from document: QueryDocumentSnapshot) -> Equipment? {
-        let data = document.data()
-        guard let name = data["name"] as? String else { return nil }
+    private static func normalizedSerial(_ serial: String) throws -> String {
+        let value = serial.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard value.range(of: #"^[A-Z0-9_-]{1,50}$"#, options: .regularExpression) != nil else {
+            throw TrakrError.invalidSerial
+        }
+        return value
+    }
+
+    private static func equipment(from document: DocumentSnapshot) -> Equipment? {
+        guard let data = document.data(), let name = data["name"] as? String else { return nil }
         return Equipment(
             id: document.documentID,
             name: name,
@@ -244,7 +382,7 @@ final class FirebaseGateway {
             claimID: claimID,
             equipmentID: equipmentID,
             reportedByStudentID: data["reportedByStudentUid"] as? String ?? "",
-            reportedByStudentEmail: data["reportedByStudentEmail"] as? String ?? "",
+            reportedByStudentEmail: "",
             text: data["text"] as? String ?? "",
             status: IssueStatus(rawValue: data["status"] as? String ?? "") ?? .open,
             reportedAt: (data["reportedAt"] as? Timestamp)?.dateValue() ?? .distantPast,
@@ -257,13 +395,19 @@ final class FirebaseGateway {
 enum FirebaseGatewayError: LocalizedError {
     case noPresentingViewController
     case missingIDToken
-    case invalidResponse
+    case unverifiedEmail
+    case studentRequired
+    case teacherRequired
+    case missingEquipment
 
     var errorDescription: String? {
         switch self {
         case .noPresentingViewController: "Unable to present Google Sign-In."
         case .missingIDToken: "Google did not return an identity token."
-        case .invalidResponse: "The Trakr backend returned an incomplete response."
+        case .unverifiedEmail: "Verify your school Google account before signing in."
+        case .studentRequired: "A student account is required for checkout."
+        case .teacherRequired: "A teacher account is required for this action."
+        case .missingEquipment: "The equipment record no longer exists."
         }
     }
 }

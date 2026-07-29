@@ -18,7 +18,7 @@ cd android
 ./gradlew assembleDebug
 ```
 
-Install `android/app/build/outputs/apk/debug/app-debug.apk` on an Android 8+ device, or open the `android` directory in Android Studio. The Compose app supports Google sign-in, NFC NDEF read/write, student checkout, teacher returns and enrollment, issue handling, FCM notifications, and complete local demo workflows.
+Install `android/app/build/outputs/apk/debug/app-debug.apk` on an Android 8+ device, or open the `android` directory in Android Studio. The Compose app supports Google sign-in, NFC NDEF read/write, student checkout, teacher returns and enrollment, issue handling, and complete local demo workflows.
 
 ## MVP behavior
 
@@ -32,9 +32,11 @@ Install `android/app/build/outputs/apk/debug/app-debug.apk` on an Android 8+ dev
 - Real Core NFC and Android NDEF reading/writing using branded `tr:` payloads.
 - Simulator demo controls for every workflow.
 
-## Firebase backend
+## Firebase Spark backend
 
-The configured development project is `trakr-sst-2026` in `asia-southeast1`. Google Authentication, iOS/Android SDK credentials, Firestore, prototype Security Rules, and indexes are configured. The `firebase/` directory supplies callable functions, scheduled overdue notifications, immutable audit writes, and emulator tests. See [production-integration.md](docs/production-integration.md).
+The configured project is `trakr-sst-2026` in `asia-southeast1`. Trakr uses only services available on Firebase's no-cost Spark plan: Google Authentication, Cloud Firestore, Security Rules, indexes, Cloud Messaging token registration, and the native SDK credentials. Both apps perform atomic Firestore batches directly; verified email claims and Security Rules enforce the student/teacher boundary. No Cloud Functions, Cloud Scheduler, server runtime, or billing account is required.
+
+Spark does not provide Trakr with a trusted scheduled process or secure FCM sender. Overdue status is calculated in-app, and workflow alerts are in-app/local rather than guaranteed cross-device push notifications. See [production-integration.md](docs/production-integration.md).
 
 ## Test
 

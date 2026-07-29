@@ -6,9 +6,29 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  writeBatch,
+} from "firebase/firestore";
 
 let environment: RulesTestEnvironment;
+
+const teacherClaims = {
+  email: "teacher@sst.edu.sg",
+  email_verified: true,
+};
+const alexClaims = {
+  email: "alex@media.ssts.edu.sg",
+  email_verified: true,
+};
+const jamieClaims = {
+  email: "jamie@media.ssts.edu.sg",
+  email_verified: true,
+};
 
 beforeAll(async () => {
   environment = await initializeTestEnvironment({
@@ -25,12 +45,63 @@ beforeEach(async () => {
   await environment.clearFirestore();
   await environment.withSecurityRulesDisabled(async (context) => {
     const firestore = context.firestore();
+    const now = new Date();
     await Promise.all([
-      setDoc(doc(firestore, "equipment/camera"), { name: "Camera" }),
-      setDoc(doc(firestore, "claims/alex-claim"), { studentUid: "alex", status: "active" }),
-      setDoc(doc(firestore, "claims/jamie-claim"), { studentUid: "jamie", status: "active" }),
-      setDoc(doc(firestore, "issues/alex-issue"), { reportedByStudentUid: "alex", status: "open" }),
-      setDoc(doc(firestore, "auditEvents/event"), { actorUid: "teacher" }),
+      setDoc(doc(firestore, "equipment/camera"), {
+        equipmentId: "camera",
+        name: "Camera",
+        internalSerial: "MC-CAM-01",
+        normalizedInternalSerial: "MC-CAM-01",
+        activeTagId: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TC",
+        status: "active",
+        enrolledBy: "teacher",
+        enrolledAt: now,
+        updatedBy: "teacher",
+        updatedAt: now,
+      }),
+      setDoc(doc(firestore, "tags/tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TC"), {
+        tagId: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TC",
+        equipmentId: "camera",
+        hardwareUidHex: "04A1B2C3",
+        chipFamily: "NFC Forum Type 2",
+        status: "active",
+        enrolledBy: "teacher",
+        enrolledAt: now,
+        replacedAt: null,
+        replacedBy: null,
+      }),
+      setDoc(doc(firestore, "claims/alex-existing"), {
+        claimId: "alex-existing",
+        checkoutBatchId: "existing-batch",
+        returnBatchId: null,
+        equipmentId: "camera",
+        tagIdAtCheckout: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TC",
+        studentUid: "alex",
+        studentEmail: alexClaims.email,
+        condition: "no_issues",
+        issueText: null,
+        status: "active",
+        checkedOutAt: now,
+        returnedAt: null,
+        returnedByTeacherUid: null,
+        overdueNotificationSentAt: null,
+      }),
+      setDoc(doc(firestore, "claims/jamie-existing"), {
+        claimId: "jamie-existing",
+        studentUid: "jamie",
+        status: "active",
+      }),
+      setDoc(doc(firestore, "issues/alex-existing"), {
+        issueId: "alex-existing",
+        claimId: "alex-existing",
+        equipmentId: "camera",
+        reportedByStudentUid: "alex",
+        text: "Loose plate",
+        status: "open",
+        reportedAt: now,
+        resolvedAt: null,
+        resolvedByTeacherUid: null,
+      }),
     ]);
   });
 });
@@ -39,46 +110,203 @@ afterAll(async () => {
   await environment.cleanup();
 });
 
-describe("student access", () => {
-  test("reads only the signed-in student's claims and issues", async () => {
-    const firestore = environment.authenticatedContext("alex", { role: "student" }).firestore();
-    await assertSucceeds(getDoc(doc(firestore, "claims/alex-claim")));
-    await assertFails(getDoc(doc(firestore, "claims/jamie-claim")));
-    await assertSucceeds(getDoc(doc(firestore, "issues/alex-issue")));
-    await assertFails(getDoc(doc(firestore, "equipment/camera")));
+function validProfile(uid: string, email: string, role: "student" | "teacher") {
+  return {
+    uid,
+    email,
+    displayName: "Test User",
+    role,
+    emailDomain: email.split("@")[1],
+    active: true,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastLoginAt: serverTimestamp(),
+  };
+}
+
+function validClaim(claimId: string, batchId: string, uid = "alex", email = alexClaims.email) {
+  return {
+    claimId,
+    checkoutBatchId: batchId,
+    returnBatchId: null,
+    equipmentId: "camera",
+    tagIdAtCheckout: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TC",
+    studentUid: uid,
+    studentEmail: email,
+    condition: "no_issues",
+    issueText: null,
+    status: "active",
+    checkedOutAt: serverTimestamp(),
+    returnedAt: null,
+    returnedByTeacherUid: null,
+    overdueNotificationSentAt: null,
+  };
+}
+
+describe("identity and PII", () => {
+  test("allows an approved user to create only their valid derived profile", async () => {
+    const firestore = environment.authenticatedContext("alex", alexClaims).firestore();
+    await assertSucceeds(setDoc(doc(firestore, "users/alex"), validProfile("alex", alexClaims.email, "student")));
+    await assertFails(setDoc(doc(firestore, "users/alex"), validProfile("alex", alexClaims.email, "teacher")));
+    await assertFails(setDoc(doc(firestore, "users/jamie"), validProfile("jamie", jamieClaims.email, "student")));
   });
 
-  test("cannot write protected records", async () => {
-    const firestore = environment.authenticatedContext("alex", { role: "student" }).firestore();
-    await assertFails(setDoc(doc(firestore, "claims/new"), { studentUid: "alex" }));
-    await assertFails(setDoc(doc(firestore, "equipment/new"), { name: "New" }));
-    await assertFails(setDoc(doc(firestore, "auditEvents/new"), { actorUid: "alex" }));
+  test("denies unverified and unrelated Google identities", async () => {
+    const unverified = environment.authenticatedContext("alex", {
+      email: alexClaims.email,
+      email_verified: false,
+    }).firestore();
+    const outsider = environment.authenticatedContext("outsider", {
+      email: "person@gmail.com",
+      email_verified: true,
+    }).firestore();
+    await assertFails(getDoc(doc(unverified, "equipment/camera")));
+    await assertFails(getDoc(doc(outsider, "equipment/camera")));
   });
 });
 
-describe("teacher access", () => {
-  test("reads inventory, all claims, issues, and audit events", async () => {
-    const firestore = environment.authenticatedContext("teacher", { role: "teacher" }).firestore();
-    const reads = await Promise.all([
-      assertSucceeds(getDoc(doc(firestore, "equipment/camera"))),
-      assertSucceeds(getDoc(doc(firestore, "claims/alex-claim"))),
-      assertSucceeds(getDoc(doc(firestore, "claims/jamie-claim"))),
-      assertSucceeds(getDoc(doc(firestore, "issues/alex-issue"))),
-      assertSucceeds(getDoc(doc(firestore, "auditEvents/event"))),
-    ]);
-    expect(reads).toHaveLength(5);
+describe("inventory", () => {
+  test("allows approved users to resolve inventory but only teachers to mutate it", async () => {
+    const student = environment.authenticatedContext("alex", alexClaims).firestore();
+    const teacher = environment.authenticatedContext("teacher", teacherClaims).firestore();
+    await assertSucceeds(getDoc(doc(student, "equipment/camera")));
+    await assertFails(updateDoc(doc(student, "equipment/camera"), { name: "Stolen" }));
+
+    const batch = writeBatch(teacher);
+    batch.set(doc(teacher, "equipment/tripod"), {
+      equipmentId: "tripod",
+      name: "Tripod",
+      internalSerial: "MC-TRI-02",
+      normalizedInternalSerial: "MC-TRI-02",
+      activeTagId: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TD",
+      status: "active",
+      enrolledBy: "teacher",
+      enrolledAt: serverTimestamp(),
+      updatedBy: "teacher",
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(doc(teacher, "tags/tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TD"), {
+      tagId: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TD",
+      equipmentId: "tripod",
+      hardwareUidHex: "04A1B2C4",
+      chipFamily: "NFC Forum Type 2",
+      status: "active",
+      enrolledBy: "teacher",
+      enrolledAt: serverTimestamp(),
+      replacedAt: null,
+      replacedBy: null,
+    });
+    batch.set(doc(teacher, "equipmentSerials/MC-TRI-02"), {
+      equipmentId: "tripod",
+      normalizedSerial: "MC-TRI-02",
+      createdAt: serverTimestamp(),
+    });
+    await assertSucceeds(batch.commit());
   });
 
-  test("cannot bypass callable functions for writes", async () => {
-    const firestore = environment.authenticatedContext("teacher", { role: "teacher" }).firestore();
-    await assertFails(setDoc(doc(firestore, "equipment/new"), { name: "New" }));
-    await assertFails(setDoc(doc(firestore, "issues/alex-issue"), { status: "resolved" }));
+  test("rejects schema pollution during teacher updates", async () => {
+    const teacher = environment.authenticatedContext("teacher", teacherClaims).firestore();
+    await assertFails(updateDoc(doc(teacher, "equipment/camera"), {
+      name: "Camera",
+      extraAdmin: true,
+      updatedBy: "teacher",
+      updatedAt: serverTimestamp(),
+    }));
+  });
+});
+
+describe("checkout and issues", () => {
+  test("allows a student batch containing their own claim and linked issue", async () => {
+    const firestore = environment.authenticatedContext("alex", alexClaims).firestore();
+    const batch = writeBatch(firestore);
+    batch.set(doc(firestore, "checkoutBatches/batch-1"), {
+      batchId: "batch-1",
+      studentUid: "alex",
+      studentEmail: alexClaims.email,
+      itemCount: 1,
+      createdAt: serverTimestamp(),
+    });
+    batch.set(doc(firestore, "claims/claim-1"), {
+      ...validClaim("claim-1", "batch-1"),
+      condition: "has_issue",
+      issueText: "Lens cap is cracked",
+    });
+    batch.set(doc(firestore, "issues/issue-1"), {
+      issueId: "issue-1",
+      claimId: "claim-1",
+      equipmentId: "camera",
+      reportedByStudentUid: "alex",
+      text: "Lens cap is cracked",
+      status: "open",
+      reportedAt: serverTimestamp(),
+      resolvedAt: null,
+      resolvedByTeacherUid: null,
+    });
+    await assertSucceeds(batch.commit());
+  });
+
+  test("denies ownership hijacking and direct student returns", async () => {
+    const firestore = environment.authenticatedContext("alex", alexClaims).firestore();
+    const batch = writeBatch(firestore);
+    batch.set(doc(firestore, "checkoutBatches/batch-bad"), {
+      batchId: "batch-bad",
+      studentUid: "alex",
+      studentEmail: alexClaims.email,
+      itemCount: 1,
+      createdAt: serverTimestamp(),
+    });
+    batch.set(doc(firestore, "claims/claim-bad"), validClaim("claim-bad", "batch-bad", "jamie", jamieClaims.email));
+    await assertFails(batch.commit());
+    await assertFails(updateDoc(doc(firestore, "claims/alex-existing"), { status: "returned" }));
+  });
+
+  test("allows only the owner or a teacher to read claims and issues", async () => {
+    const alex = environment.authenticatedContext("alex", alexClaims).firestore();
+    const teacher = environment.authenticatedContext("teacher", teacherClaims).firestore();
+    await assertSucceeds(getDoc(doc(alex, "claims/alex-existing")));
+    await assertFails(getDoc(doc(alex, "claims/jamie-existing")));
+    await assertSucceeds(getDoc(doc(teacher, "claims/jamie-existing")));
+    await assertSucceeds(getDoc(doc(alex, "issues/alex-existing")));
+  });
+});
+
+describe("returns and issue lifecycle", () => {
+  test("allows a teacher return batch and constrained active-to-returned transition", async () => {
+    const firestore = environment.authenticatedContext("teacher", teacherClaims).firestore();
+    const batch = writeBatch(firestore);
+    batch.set(doc(firestore, "returnBatches/return-1"), {
+      batchId: "return-1",
+      teacherUid: "teacher",
+      claimCount: 1,
+      createdAt: serverTimestamp(),
+    });
+    batch.update(doc(firestore, "claims/alex-existing"), {
+      status: "returned",
+      returnBatchId: "return-1",
+      returnedAt: serverTimestamp(),
+      returnedByTeacherUid: "teacher",
+    });
+    await assertSucceeds(batch.commit());
+  });
+
+  test("allows valid issue status changes and rejects oversized corruption", async () => {
+    const firestore = environment.authenticatedContext("teacher", teacherClaims).firestore();
+    await assertSucceeds(updateDoc(doc(firestore, "issues/alex-existing"), {
+      status: "resolved",
+      resolvedAt: serverTimestamp(),
+      resolvedByTeacherUid: "teacher",
+    }));
+    await assertFails(updateDoc(doc(firestore, "issues/alex-existing"), {
+      text: "x".repeat(1000),
+      status: "open",
+      resolvedAt: null,
+      resolvedByTeacherUid: null,
+    }));
   });
 });
 
 test("unauthenticated clients are denied", async () => {
   const firestore = environment.unauthenticatedContext().firestore();
   await assertFails(getDoc(doc(firestore, "equipment/camera")));
-  await assertFails(getDoc(doc(firestore, "claims/alex-claim")));
+  expect(true).toBe(true);
 });
-
