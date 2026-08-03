@@ -218,7 +218,7 @@ private struct CheckoutReceiptView: View {
                         if item.id != receipt.equipment.last?.id { Divider() }
                     }
                 }
-                .background(TrakrTheme.paper, in: RoundedRectangle(cornerRadius: 18))
+                .background(TrakrTheme.surface, in: RoundedRectangle(cornerRadius: 18))
                 Text("Return equipment to a teacher when finished.")
                     .font(.callout)
                     .foregroundStyle(.secondary)

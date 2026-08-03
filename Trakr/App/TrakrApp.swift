@@ -17,6 +17,7 @@ struct TrakrApp: App {
             RootView()
                 .environmentObject(store)
                 .tint(TrakrTheme.pink)
+                .preferredColorScheme(.dark)
                 .onReceive(connectivity.$isReachable) { store.setNetworkReachable($0) }
                 .onAppear {
                     if ProcessInfo.processInfo.arguments.contains("--reset-data") {

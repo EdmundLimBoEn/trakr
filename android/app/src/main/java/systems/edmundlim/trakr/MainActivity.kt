@@ -53,6 +53,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -126,16 +127,30 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 }
 
 private val Bloom = Color(0xFFF294EA)
-private val Blush = Color(0xFFFCEAFB)
+private val Ink = Color(0xFFF9F2F7)
+private val Night = Color(0xFF100A0F)
+private val Surface = Color(0xFF211820)
+private val Blush = Color(0xFF342230)
 
 @Composable
 private fun TrakrTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = MaterialTheme.colorScheme.copy(
+        colorScheme = darkColorScheme(
             primary = Bloom,
+            onPrimary = Color(0xFF2A1025),
             secondary = Color(0xFFB36B18),
-            primaryContainer = Bloom,
+            onSecondary = Color.Black,
+            primaryContainer = Color(0xFF5C2855),
+            onPrimaryContainer = Ink,
             secondaryContainer = Blush,
+            onSecondaryContainer = Ink,
+            background = Night,
+            onBackground = Ink,
+            surface = Surface,
+            onSurface = Ink,
+            surfaceVariant = Blush,
+            onSurfaceVariant = Color(0xFFDCC8D7),
+            outline = Color(0xFF9C8197),
         ),
         content = content,
     )

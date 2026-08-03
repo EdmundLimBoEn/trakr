@@ -1,10 +1,11 @@
 import SwiftUI
 
 enum TrakrTheme {
-    static let ink = Color(red: 0.05, green: 0.09, blue: 0.08)
+    static let ink = Color(red: 0.98, green: 0.95, blue: 0.97)
     static let pink = Color(red: 0.949, green: 0.580, blue: 0.918)
-    static let blush = Color(red: 0.988, green: 0.918, blue: 0.984)
-    static let paper = Color(red: 0.96, green: 0.96, blue: 0.92)
+    static let blush = Color(red: 0.20, green: 0.13, blue: 0.19)
+    static let paper = Color(red: 0.06, green: 0.04, blue: 0.06)
+    static let surface = Color(red: 0.12, green: 0.09, blue: 0.12)
     static let amber = Color(red: 0.95, green: 0.64, blue: 0.20)
 }
 

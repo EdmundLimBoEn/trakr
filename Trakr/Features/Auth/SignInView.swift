@@ -51,7 +51,7 @@ struct SignInView: View {
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .padding()
-                            .background(.background, in: RoundedRectangle(cornerRadius: 14))
+                            .background(TrakrTheme.surface, in: RoundedRectangle(cornerRadius: 14))
                             .overlay {
                                 RoundedRectangle(cornerRadius: 14)
                                     .stroke(.quaternary)
