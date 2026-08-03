@@ -125,16 +125,17 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     }
 }
 
-private val Forest = Color(0xFF174F3D)
-private val Mint = Color(0xFFD4F0E1)
+private val Bloom = Color(0xFFF294EA)
+private val Blush = Color(0xFFFCEAFB)
 
 @Composable
 private fun TrakrTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = MaterialTheme.colorScheme.copy(
-            primary = Forest,
+            primary = Bloom,
             secondary = Color(0xFFB36B18),
-            primaryContainer = Mint,
+            primaryContainer = Bloom,
+            secondaryContainer = Blush,
         ),
         content = content,
     )
@@ -172,7 +173,7 @@ private fun SignInScreen(viewModel: TrakrViewModel) {
         modifier = Modifier.fillMaxSize().padding(28.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(Icons.Default.Nfc, null, tint = Forest, modifier = Modifier.height(72.dp))
+        Icon(Icons.Default.Nfc, null, tint = Bloom, modifier = Modifier.height(72.dp))
         Spacer(Modifier.height(24.dp))
         Text("Trakr", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
         Text("Know where every piece of gear is.", style = MaterialTheme.typography.headlineSmall)
@@ -256,9 +257,9 @@ private fun CheckoutScreen(viewModel: TrakrViewModel, state: TrakrUiState) {
     var issueText by remember { mutableStateOf("") }
     AppList(title = "Checkout", subtitle = "Hold an NFC tag near the back of this phone.") {
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Mint)) {
+            Card(colors = CardDefaults.cardColors(containerColor = Blush)) {
                 Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Nfc, null, tint = Forest)
+                    Icon(Icons.Default.Nfc, null, tint = Bloom)
                     Column(Modifier.padding(start = 14.dp)) {
                         Text("Ready to scan", fontWeight = FontWeight.Bold)
                         Text("You can stage up to 20 items.")
@@ -401,7 +402,7 @@ private fun IssuesScreen(viewModel: TrakrViewModel, state: TrakrUiState) {
             Card(onClick = { selectedIssue = issue.id }) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
                     Text(issue.text, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                    Text(issue.status.name.lowercase().replaceFirstChar(Char::uppercase), color = Forest, fontWeight = FontWeight.Bold)
+                    Text(issue.status.name.lowercase().replaceFirstChar(Char::uppercase), color = Bloom, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -437,7 +438,7 @@ private fun EquipmentCard(item: Equipment, trailing: @Composable (() -> Unit)? =
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Inventory2, null, tint = Forest)
+                Icon(Icons.Default.Inventory2, null, tint = Bloom)
                 Column(Modifier.padding(start = 12.dp)) {
                     Text(item.name, fontWeight = FontWeight.Bold)
                     Text(item.internalSerial, style = MaterialTheme.typography.bodySmall)

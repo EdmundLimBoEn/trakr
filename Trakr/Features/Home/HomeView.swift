@@ -41,7 +41,7 @@ private struct ProfileView: View {
                                 Text(user.email).font(.subheadline).foregroundStyle(.secondary)
                             }
                         }
-                        StatusPill(text: user.role.title, color: TrakrTheme.forest)
+                        StatusPill(text: user.role.title, color: TrakrTheme.pink)
                     }
                 }
                 Section("MVP controls") {

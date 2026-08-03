@@ -14,8 +14,8 @@ struct EquipmentListView: View {
                         Image(systemName: icon(for: item.name))
                             .font(.title3)
                             .frame(width: 38, height: 38)
-                            .foregroundStyle(TrakrTheme.forest)
-                            .background(TrakrTheme.mint, in: RoundedRectangle(cornerRadius: 10))
+                            .foregroundStyle(TrakrTheme.pink)
+                            .background(TrakrTheme.blush, in: RoundedRectangle(cornerRadius: 10))
                         VStack(alignment: .leading, spacing: 3) {
                             Text(item.name).font(.headline)
                             Text(item.internalSerial).font(.subheadline).foregroundStyle(.secondary)

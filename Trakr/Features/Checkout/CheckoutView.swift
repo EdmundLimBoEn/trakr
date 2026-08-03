@@ -171,7 +171,7 @@ private struct CheckoutItemRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(TrakrTheme.forest)
+                    .foregroundStyle(TrakrTheme.pink)
                 VStack(alignment: .leading) {
                     Text(item.equipment.name).font(.headline)
                     Text(item.equipment.internalSerial).font(.caption).foregroundStyle(.secondary)
@@ -200,7 +200,7 @@ private struct CheckoutReceiptView: View {
             VStack(spacing: 24) {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 64))
-                    .foregroundStyle(TrakrTheme.forest)
+                    .foregroundStyle(TrakrTheme.pink)
                 VStack(spacing: 6) {
                     Text("Equipment checked out")
                         .font(.title.bold())

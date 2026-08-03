@@ -2,8 +2,8 @@ import SwiftUI
 
 enum TrakrTheme {
     static let ink = Color(red: 0.05, green: 0.09, blue: 0.08)
-    static let forest = Color(red: 0.09, green: 0.31, blue: 0.24)
-    static let mint = Color(red: 0.83, green: 0.94, blue: 0.88)
+    static let pink = Color(red: 0.949, green: 0.580, blue: 0.918)
+    static let blush = Color(red: 0.988, green: 0.918, blue: 0.984)
     static let paper = Color(red: 0.96, green: 0.96, blue: 0.92)
     static let amber = Color(red: 0.95, green: 0.64, blue: 0.20)
 }
@@ -14,7 +14,7 @@ struct TrakrMark: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.28)
-                .fill(TrakrTheme.forest)
+                .fill(TrakrTheme.pink)
             Image(systemName: "sensor.tag.radiowaves.forward.fill")
                 .font(.system(size: size * 0.48, weight: .semibold))
                 .foregroundStyle(.white)

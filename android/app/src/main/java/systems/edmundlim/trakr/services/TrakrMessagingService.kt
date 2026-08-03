@@ -32,7 +32,7 @@ class TrakrMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.trakr_app_icon)
             .setContentTitle(message.notification?.title ?: "Trakr")
             .setContentText(message.notification?.body ?: "Equipment activity updated.")
             .setAutoCancel(true)

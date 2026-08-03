@@ -141,7 +141,7 @@ private struct ReturnConfirmationView: View {
             VStack(spacing: 24) {
                 Image(systemName: "arrow.uturn.backward.circle.fill")
                     .font(.system(size: 64))
-                    .foregroundStyle(TrakrTheme.forest)
+                    .foregroundStyle(TrakrTheme.pink)
                 VStack(spacing: 8) {
                     Text("Return recorded")
                         .font(.title.bold())
