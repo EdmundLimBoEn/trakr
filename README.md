@@ -34,9 +34,9 @@ Install `android/app/build/outputs/apk/debug/app-debug.apk` on an Android 8+ dev
 
 ## Firebase Spark backend
 
-The configured project is `trakr-sst-2026` in `asia-southeast1`. Trakr uses only services available on Firebase's no-cost Spark plan: Google Authentication, Cloud Firestore, Security Rules, indexes, Cloud Messaging token registration, and the native SDK credentials. Both apps perform atomic Firestore batches directly; verified email claims and Security Rules enforce the student/teacher boundary. No Cloud Functions, Cloud Scheduler, server runtime, or billing account is required.
+The configured project is `trakr-sst-2026` in `asia-southeast1`. Trakr uses only Spark-plan services: Google Authentication, Cloud Firestore, Security Rules, and indexes. Clients write atomic Firestore batches directly; verified email claims and Security Rules enforce the student/teacher boundary. No Cloud Functions, Cloud Messaging, Cloud Scheduler, or billing account.
 
-Spark does not provide Trakr with a trusted scheduled process or secure FCM sender. Overdue status is calculated in-app, and workflow alerts are in-app/local rather than guaranteed cross-device push notifications. See [production-integration.md](docs/production-integration.md).
+Overdue status and workflow alerts are calculated in-app. See [production-integration.md](docs/production-integration.md).
 
 ## Test
 

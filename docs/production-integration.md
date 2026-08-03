@@ -35,10 +35,10 @@ The checked-in development `GoogleService-Info.plist` and `google-services.json`
 
 ## Spark limitations
 
-- There is no trusted scheduled overdue process. Each app calculates overdue state when it refreshes.
-- Device FCM tokens can be registered, but a mobile client cannot safely hold server credentials. Workflow alerts are local/in-app unless a trusted sender is added later.
-- Spark quotas apply. Watch Authentication and Firestore usage in the Firebase console during the pilot.
-- Client-generated request IDs and immutable batch documents make repeated confirmations safe, but offline Firestore replay should still be tested on physical devices.
+- No trusted scheduled overdue process — each app calculates overdue state on refresh.
+- No push notifications — workflow alerts are in-app only.
+- Spark quotas apply. Watch Authentication and Firestore usage during the pilot.
+- Client-generated request IDs and immutable batch documents make repeated confirmations safe; still test offline replay on devices.
 
 ## Pilot checks
 

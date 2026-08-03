@@ -1,15 +1,11 @@
 package systems.edmundlim.trakr
 
-import android.Manifest
 import android.app.Activity
-import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import android.nfc.Tag
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,14 +20,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.automirrored.filled.AssignmentReturn
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ReportProblem
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -77,13 +73,9 @@ import systems.edmundlim.trakr.domain.UserRole
 class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     private val viewModel: TrakrViewModel by viewModels()
     private val nfcAdapter by lazy { NfcAdapter.getDefaultAdapter(this) }
-    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
         setContent {
             TrakrTheme {
                 TrakrRoot(viewModel)
@@ -188,7 +180,7 @@ private fun SignInScreen(viewModel: TrakrViewModel) {
         modifier = Modifier.fillMaxSize().padding(28.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(Icons.Default.Nfc, null, tint = Bloom, modifier = Modifier.height(72.dp))
+        Icon(Icons.Default.ShoppingCart, null, tint = Bloom, modifier = Modifier.height(72.dp))
         Spacer(Modifier.height(24.dp))
         Text("Trakr", style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
         Text("Know where every piece of gear is.", style = MaterialTheme.typography.headlineSmall)
@@ -217,9 +209,9 @@ private fun Dashboard(viewModel: TrakrViewModel, state: TrakrUiState) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val teacher = state.user?.role == UserRole.TEACHER
     val tabs = if (teacher) {
-        listOf("Overview" to Icons.Default.Inventory2, "Returns" to Icons.AutoMirrored.Filled.AssignmentReturn, "Enroll" to Icons.Default.Add, "Issues" to Icons.Default.ReportProblem)
+        listOf("Overview" to Icons.AutoMirrored.Filled.List, "Returns" to Icons.AutoMirrored.Filled.ArrowBack, "Enroll" to Icons.Default.Add, "Issues" to Icons.Default.Warning)
     } else {
-        listOf("Checkout" to Icons.Default.Nfc, "Activity" to Icons.Default.CheckCircle)
+        listOf("Checkout" to Icons.Default.ShoppingCart, "Activity" to Icons.Default.CheckCircle)
     }
     Scaffold(
         topBar = {
@@ -232,7 +224,7 @@ private fun Dashboard(viewModel: TrakrViewModel, state: TrakrUiState) {
                 },
                 actions = {
                     AssistChip(onClick = {}, label = { Text(if (state.isCloudSession) "Firebase" else "Demo") })
-                    IconButton(onClick = viewModel::signOut) { Icon(Icons.AutoMirrored.Filled.Logout, "Sign out") }
+                    IconButton(onClick = viewModel::signOut) { Icon(Icons.AutoMirrored.Filled.ExitToApp, "Sign out") }
                 },
             )
         },
@@ -274,7 +266,7 @@ private fun CheckoutScreen(viewModel: TrakrViewModel, state: TrakrUiState) {
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Blush)) {
                 Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Nfc, null, tint = Bloom)
+                    Icon(Icons.Default.ShoppingCart, null, tint = Bloom)
                     Column(Modifier.padding(start = 14.dp)) {
                         Text("Ready to scan", fontWeight = FontWeight.Bold)
                         Text("You can stage up to 20 items.")
@@ -392,7 +384,7 @@ private fun EnrollmentScreen(viewModel: TrakrViewModel, state: TrakrUiState) {
                 onClick = { tagId = viewModel.prepareEnrollmentTag() },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Icon(Icons.Default.Nfc, null)
+                Icon(Icons.Default.ShoppingCart, null)
                 Text(if (state.pendingTagPayload == null) " Generate and write NFC tag" else " Tap tag now")
             }
         }
@@ -453,7 +445,7 @@ private fun EquipmentCard(item: Equipment, trailing: @Composable (() -> Unit)? =
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Inventory2, null, tint = Bloom)
+                Icon(Icons.AutoMirrored.Filled.List, null, tint = Bloom)
                 Column(Modifier.padding(start = 12.dp)) {
                     Text(item.name, fontWeight = FontWeight.Bold)
                     Text(item.internalSerial, style = MaterialTheme.typography.bodySmall)

@@ -173,13 +173,6 @@ final class TrakrTests: XCTestCase {
         XCTAssertFalse(updated.isActive)
     }
 
-    func testSnapshotDecodesDataWrittenBeforeNotificationSupport() throws {
-        let data = Data(#"{"equipment":[],"claims":[],"auditEvents":[],"requestResults":{}}"#.utf8)
-        let snapshot = try JSONDecoder().decode(StoreSnapshot.self, from: data)
-        XCTAssertTrue(snapshot.issues.isEmpty)
-        XCTAssertTrue(snapshot.notifications.isEmpty)
-    }
-
     @MainActor
     func testRoleBoundariesAreEnforcedByStore() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())

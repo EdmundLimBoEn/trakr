@@ -1,7 +1,5 @@
 import FirebaseAuth
 @preconcurrency import FirebaseFirestore
-import FirebaseInstallations
-import FirebaseMessaging
 import GoogleSignIn
 import UIKit
 
@@ -50,7 +48,6 @@ final class FirebaseGateway {
             role: role
         )
         try await upsertProfile(user)
-        Task { try? await registerDevice() }
         return user
     }
 
@@ -316,20 +313,6 @@ final class FirebaseGateway {
             : database.collection("issues")
                 .whereField("reportedByStudentUid", isEqualTo: user.id)
                 .order(by: "reportedAt", descending: true)
-    }
-
-    private func registerDevice() async throws {
-        guard let user = currentUser else { return }
-        let installationID = try await Installations.installations().installationID()
-        let token = try await Messaging.messaging().token()
-        try await database.collection("users").document(user.id)
-            .collection("devices").document(installationID).setData([
-                "installationId": installationID,
-                "fcmToken": token,
-                "platform": "ios",
-                "notificationsEnabled": true,
-                "updatedAt": FieldValue.serverTimestamp(),
-            ])
     }
 
     private static func normalizedSerial(_ serial: String) throws -> String {

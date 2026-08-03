@@ -4,7 +4,6 @@ rules_version = '2';
 // Assumed data model
 // ===============================================================
 // users/{uid}: private profile; owner-readable and owner-writable.
-// users/{uid}/devices/{installationId}: private messaging registration.
 // equipment/{id}: non-PII inventory record.
 // tags/{tagId}: NFC payload-to-equipment mapping.
 // equipmentSerials/{normalizedSerial}: uniqueness guard.
@@ -83,21 +82,6 @@ service cloud.firestore {
         && data.createdAt is timestamp
         && data.updatedAt is timestamp
         && data.lastLoginAt is timestamp;
-    }
-
-    function isValidDevice(data, deviceId) {
-      return data.keys().hasAll([
-          "installationId", "platform", "fcmToken", "notificationsEnabled", "updatedAt"
-        ])
-        && data.keys().hasOnly([
-          "installationId", "platform", "fcmToken", "notificationsEnabled", "updatedAt"
-        ])
-        && data.installationId == deviceId
-        && shortString(data.installationId, 1, 128)
-        && data.platform in ["ios", "android"]
-        && shortString(data.fcmToken, 1, 4096)
-        && data.notificationsEnabled is bool
-        && data.updatedAt is timestamp;
     }
 
     function isValidEquipment(data, equipmentId) {
@@ -237,15 +221,6 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
         && request.resource.data.lastLoginAt == request.time;
       allow delete: if false;
-
-      match /devices/{deviceId} {
-        allow read: if isOwner(uid);
-        allow create, update: if isOwner(uid)
-          && exists(/databases/$(database)/documents/users/$(uid))
-          && isValidDevice(request.resource.data, deviceId)
-          && request.resource.data.updatedAt == request.time;
-        allow delete: if isOwner(uid);
-      }
     }
 
     match /equipment/{equipmentId} {

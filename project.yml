@@ -59,10 +59,6 @@ targets:
         product: FirebaseAuth
       - package: Firebase
         product: FirebaseFirestore
-      - package: Firebase
-        product: FirebaseMessaging
-      - package: Firebase
-        product: FirebaseInstallations
       - package: GoogleSignIn
         product: GoogleSignIn
   TrakrTests:

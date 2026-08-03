@@ -15,8 +15,6 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
-import com.google.firebase.installations.FirebaseInstallations
-import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
 import systems.edmundlim.trakr.R
 import systems.edmundlim.trakr.domain.Claim
@@ -65,7 +63,6 @@ class FirebaseGateway(private val context: Context) {
             role,
         )
         upsertProfile(user)
-        registerDevice()
         return user
     }
 
@@ -355,24 +352,6 @@ class FirebaseGateway(private val context: Context) {
                     "lastLoginAt" to FieldValue.serverTimestamp(),
                 ),
             ).await()
-        }
-    }
-
-    private suspend fun registerDevice() {
-        runCatching {
-            val user = requireNotNull(currentUser())
-            val installationId = FirebaseInstallations.getInstance().id.await()
-            val token = FirebaseMessaging.getInstance().token.await()
-            firestore.collection("users").document(user.id)
-                .collection("devices").document(installationId).set(
-                    mapOf(
-                        "installationId" to installationId,
-                        "fcmToken" to token,
-                        "platform" to "android",
-                        "notificationsEnabled" to true,
-                        "updatedAt" to FieldValue.serverTimestamp(),
-                    ),
-                ).await()
         }
     }
 
