@@ -1,0 +1,8 @@
+{
+  "bug": "nfc-write-readback-false-failure",
+  "device": "iPhone 17 Pro, iOS 27.0",
+  "reproduction": "Enroll equipment, tap Write NFC tag, and hold a writable NDEF tag near the iPhone.",
+  "observed": "Core NFC reports a successful write, but the immediate read-back is stale or loses the tag connection and Trakr shows 'The NFC write could not be verified.' NFC Tools subsequently reads the new payload.",
+  "expected": "A successful Core NFC write completion proceeds with enrollment. Read-back is best-effort and may improve the confirmation message, but cannot turn a confirmed write into a failure.",
+  "source": "Real-device report, 2026-08-03"
+}

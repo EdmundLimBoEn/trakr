@@ -1,4 +1,5 @@
 import XCTest
+import CoreNFC
 @testable import Trakr
 
 final class TrakrTests: XCTestCase {
@@ -15,6 +16,42 @@ final class TrakrTests: XCTestCase {
         XCTAssertEqual(tag.count, 29)
         XCTAssertFalse(TagCodec.isValid("tr:not-valid"))
         XCTAssertEqual(TagCodec.normalizedUID([0x04, 0x00, 0xAF]), "0400AF")
+    }
+
+    func testSuccessfulNFCWriteIsNotRejectedByTransientReadBack() throws {
+        let tagID = TagCodec.generate()
+        let payload = try XCTUnwrap(
+            NFCNDEFPayload.wellKnownTypeTextPayload(string: tagID, locale: Locale(identifier: "en"))
+        )
+        let matchingMessage = NFCNDEFMessage(records: [payload])
+
+        XCTAssertEqual(
+            NFCWriteConfirmation.resolve(expectedTagID: tagID, message: matchingMessage, error: nil),
+            .verified
+        )
+        XCTAssertEqual(
+            NFCWriteConfirmation.resolve(
+                expectedTagID: tagID,
+                message: nil,
+                error: NSError(
+                    domain: NFCErrorDomain,
+                    code: NFCReaderError.Code.readerTransceiveErrorTagConnectionLost.rawValue
+                )
+            ),
+            .writeConfirmed
+        )
+
+        let stalePayload = try XCTUnwrap(
+            NFCNDEFPayload.wellKnownTypeTextPayload(string: TagCodec.generate(), locale: Locale(identifier: "en"))
+        )
+        XCTAssertEqual(
+            NFCWriteConfirmation.resolve(
+                expectedTagID: tagID,
+                message: NFCNDEFMessage(records: [stalePayload]),
+                error: nil
+            ),
+            .writeConfirmed
+        )
     }
 
     @MainActor

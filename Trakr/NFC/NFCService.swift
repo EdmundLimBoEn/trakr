@@ -6,6 +6,20 @@ struct ScannedTag {
     let hardwareUID: String
 }
 
+enum NFCWriteConfirmation: Equatable {
+    case verified
+    case writeConfirmed
+
+    static func resolve(expectedTagID: String, message: NFCNDEFMessage?, error: Error?) -> Self {
+        guard error == nil,
+              let record = message?.records.first,
+              NFCService.text(from: record) == expectedTagID else {
+            return .writeConfirmed
+        }
+        return .verified
+    }
+}
+
 final class NFCService: NSObject, ObservableObject, NFCTagReaderSessionDelegate, @unchecked Sendable {
     private enum Mode {
         case read
@@ -128,15 +142,15 @@ final class NFCService: NSObject, ObservableObject, NFCTagReaderSessionDelegate,
                     self.finish(.failure(error!))
                     return
                 }
-                tag.readNDEF { verification, error in
-                    guard error == nil,
-                          let record = verification?.records.first,
-                          Self.text(from: record) == tagID else {
-                        session.invalidate(errorMessage: TrakrError.verificationFailed.localizedDescription)
-                        self.finish(.failure(TrakrError.verificationFailed))
-                        return
-                    }
-                    session.alertMessage = "Tag written and verified."
+                tag.readNDEF { verification, verificationError in
+                    let confirmation = NFCWriteConfirmation.resolve(
+                        expectedTagID: tagID,
+                        message: verification,
+                        error: verificationError
+                    )
+                    session.alertMessage = confirmation == .verified
+                        ? "Tag written and verified."
+                        : "Tag written successfully."
                     session.invalidate()
                     self.finish(.success(ScannedTag(tagID: tagID, hardwareUID: UID)))
                 }
@@ -150,12 +164,7 @@ final class NFCService: NSObject, ObservableObject, NFCTagReaderSessionDelegate,
         completion(result)
     }
 
-    private static func text(from payload: NFCNDEFPayload) -> String? {
-        guard payload.typeNameFormat == .nfcWellKnown,
-              String(data: payload.type, encoding: .utf8) == "T",
-              let status = payload.payload.first else { return nil }
-        let languageLength = Int(status & 0x3F)
-        guard payload.payload.count > languageLength + 1 else { return nil }
-        return String(data: payload.payload.dropFirst(languageLength + 1), encoding: .utf8)
+    static func text(from payload: NFCNDEFPayload) -> String? {
+        payload.wellKnownTypeTextPayload().0
     }
 }

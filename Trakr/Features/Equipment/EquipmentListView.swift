@@ -190,7 +190,7 @@ private struct TagReplacementView: View {
                     Button {
                         write()
                     } label: {
-                        Label(isWriting ? "Writing…" : "Write and verify replacement", systemImage: "sensor.tag.radiowaves.forward.fill")
+                        Label(isWriting ? "Writing…" : "Write replacement tag", systemImage: "sensor.tag.radiowaves.forward.fill")
                     }
                     .disabled(isWriting)
                     Button("Use demo replacement") {
@@ -262,7 +262,7 @@ private struct EnrollmentView: View {
                     Button {
                         writeTag()
                     } label: {
-                        Label(isWriting ? "Writing…" : "Write and verify NFC tag", systemImage: "sensor.tag.radiowaves.forward.fill")
+                        Label(isWriting ? "Writing…" : "Write NFC tag", systemImage: "sensor.tag.radiowaves.forward.fill")
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || serial.trimmingCharacters(in: .whitespaces).isEmpty || isWriting)
                     Button("Enroll demo tag") {
@@ -273,7 +273,7 @@ private struct EnrollmentView: View {
                 } header: {
                     Text("NFC tag")
                 } footer: {
-                    Text("The backend record is created only after the NFC payload has been written and read back exactly.")
+                    Text("The backend record is created only after Core NFC confirms that the payload was written. Read-back verification is attempted when the tag remains connected.")
                 }
             }
             .navigationTitle("Enroll equipment")
