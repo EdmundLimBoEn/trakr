@@ -27,11 +27,22 @@ The deploy script publishes only Firestore rules and indexes. It does not deploy
 
 ## Native credentials
 
-The checked-in development `GoogleService-Info.plist` and `google-services.json` identify the Firebase apps; they are not admin credentials. Before distribution:
+Firebase client config files identify the apps. They are **not** admin credentials, but they do contain Google API keys and must **not** be committed (this repo is public).
 
-1. Register Android debug and release SHA-1/SHA-256 fingerprints, then refresh `google-services.json`.
-2. Enable NFC Tag Reading for the iOS App ID and sign on a physical device.
-3. Use separate Firebase app registrations and downloaded config files for production.
+1. Download from Firebase Console → Project settings → Your apps:
+   - iOS → `GoogleService-Info.plist` → place at `Trakr/GoogleService-Info.plist`
+   - Android → `google-services.json` → place at `android/app/google-services.json`
+2. Or copy the examples and fill in values:
+   - `Trakr/GoogleService-Info.plist.example`
+   - `android/app/google-services.json.example`
+3. Before distribution:
+   - Register Android debug and release SHA-1/SHA-256 fingerprints, then refresh `google-services.json`.
+   - Enable NFC Tag Reading for the iOS App ID and sign on a physical device.
+   - Use separate Firebase app registrations and config files for production.
+4. Harden keys in [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials):
+   - iOS key: application restriction = iOS apps (`systems.edmundlim.trakr`)
+   - Android key: application restriction = Android apps (package + SHA-1)
+   - API restrictions: only Firebase / Identity Toolkit / related APIs you use
 
 ## Spark limitations
 

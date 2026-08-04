@@ -2,18 +2,34 @@
 
 Trakr is an NFC equipment checkout app with native SwiftUI iOS and Jetpack Compose Android clients backed by Firebase.
 
+## Firebase client config (required)
+
+`GoogleService-Info.plist` and `google-services.json` are gitignored (API keys). Add them locally before a Firebase-backed build:
+
+1. Firebase Console → Project settings → Your apps → download config files, **or**
+2. Copy the examples and fill in values from your project:
+
+```sh
+cp Trakr/GoogleService-Info.plist.example Trakr/GoogleService-Info.plist
+cp android/app/google-services.json.example android/app/google-services.json
+```
+
+See [production-integration.md](docs/production-integration.md) for restrictions and pilot setup.
+
 ## iOS
 
-1. Open `Trakr.xcodeproj` in Xcode.
-2. Select an iPhone simulator or NFC-capable physical iPhone.
-3. Run the `Trakr` scheme.
-4. Sign in with an approved school Google account, or choose a local Student/Teacher demo.
+1. Place `Trakr/GoogleService-Info.plist` (see above).
+2. Open `Trakr.xcodeproj` in Xcode.
+3. Select an iPhone simulator or NFC-capable physical iPhone.
+4. Run the `Trakr` scheme.
+5. Sign in with an approved school Google account, or choose a local Student/Teacher demo.
 
 The deployment target is iOS 17. Firebase and Google Sign-In are installed with Swift Package Manager.
 
 ## Android
 
 ```sh
+# Place android/app/google-services.json first (see Firebase client config).
 cd android
 ./gradlew assembleDebug
 ```
