@@ -16,12 +16,10 @@ app.all("/e/:path/api/*", async (c) => {
   }
   const url = new URL(c.req.url);
   const prefix = `/e/${path}`;
-  let stripped = url.pathname.slice(prefix.length) || "/";
-  if (stripped.startsWith("/api")) {
-    stripped = stripped.slice(4) || "/";
-  }
+  // Keep /api/... so the mounted API app sees the same paths as SSO.
+  const stripped = url.pathname.slice(prefix.length) || "/";
   const rewritten = new Request(new URL(stripped + url.search, url.origin), c.req.raw);
-  return api.fetch(rewritten, c.env, c.executionCtx);
+  return app.fetch(rewritten, c.env, c.executionCtx);
 });
 
 function isApiPath(pathname: string): boolean {

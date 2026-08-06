@@ -47,12 +47,19 @@ function isMutating(method: string): boolean {
   return method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
 }
 
+function normalizeApiPath(path: string): string {
+  if (path === "/api") return "/";
+  if (path.startsWith("/api/")) return path.slice(4);
+  return path;
+}
+
 function isPublicRoute(method: string, path: string): boolean {
-  if (method === "GET" && (path === "/health" || path === "/config")) return true;
-  if (method === "POST" && path === "/auth/session") return true;
-  if (method === "POST" && path === "/auth/logout") return true;
-  if (method === "GET" && path === "/auth/me") return true;
-  if (method === "POST" && path === "/unlock") return true;
+  const p = normalizeApiPath(path);
+  if (method === "GET" && (p === "/health" || p === "/config")) return true;
+  if (method === "POST" && p === "/auth/session") return true;
+  if (method === "POST" && p === "/auth/logout") return true;
+  if (method === "GET" && p === "/auth/me") return true;
+  if (method === "POST" && p === "/unlock") return true;
   return false;
 }
 
@@ -100,6 +107,11 @@ export function createApiApp(): Hono<ApiEnv> {
 
     c.set("actor", actor);
     await next();
+  });
+
+  api.onError((err, c) => {
+    console.error("api-error", err);
+    return jsonError(500, err instanceof Error ? err.message : "internal-error");
   });
 
   api.get("/health", (c) => c.json({ ok: true }));
