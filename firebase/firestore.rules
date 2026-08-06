@@ -3,15 +3,19 @@ rules_version = '2';
 // ===============================================================
 // Assumed data model
 // ===============================================================
-// users/{uid}: private profile; owner-readable and owner-writable.
-// equipment/{id}: non-PII inventory record.
-// tags/{tagId}: NFC payload-to-equipment mapping.
+// users/{uid}: private school profile; owner-readable and owner-writable.
+// demoUsers/{uid}: anonymous demo role profile only (not inventory).
+// equipment/{id}: non-PII inventory record (shared by school + demo).
+// tags/{tagId}: NFC payload-to-equipment mapping (shared).
 // equipmentSerials/{normalizedSerial}: uniqueness guard.
 // checkoutBatches/{id}: immutable student checkout header.
 // claims/{id}: immutable student checkout plus teacher-only return transition.
 // issues/{id}: student-created report plus teacher-managed status.
 // returnBatches/{id}: immutable teacher return header.
 // auditEvents and every unspecified path: no client writes.
+//
+// Demo (anonymous) access is intentionally loose — for classroom testing only.
+// Remove Anonymous auth + demoUsers before a public production launch.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -29,24 +33,53 @@ service cloud.firestore {
       return isVerified() ? request.auth.token.email.lower() : "";
     }
 
-    function isTeacher() {
+    function isSchoolTeacher() {
       return isVerified() && authEmail().matches("^[^@]+@sst[.]edu[.]sg$");
     }
 
-    function isStudent() {
+    function isSchoolStudent() {
       return isVerified() && authEmail().matches("^[^@]+@[^@]+[.]ssts[.]edu[.]sg$");
     }
 
+    function isDemo() {
+      return isAuthenticated()
+        && request.auth.token.firebase.sign_in_provider == "anonymous";
+    }
+
+    function demoRole() {
+      return isDemo()
+        && exists(/databases/$(database)/documents/demoUsers/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/demoUsers/$(request.auth.uid)).data.role
+        : "";
+    }
+
+    function isDemoTeacher() {
+      return demoRole() == "teacher";
+    }
+
+    function isDemoStudent() {
+      return demoRole() == "student";
+    }
+
     function isApproved() {
-      return isTeacher() || isStudent();
+      return isSchoolTeacher() || isSchoolStudent() || isDemoTeacher() || isDemoStudent();
+    }
+
+    function isValidDemoUser(data, uid) {
+      return data.keys().hasAll([
+          "uid", "displayName", "role", "demo", "createdAt", "updatedAt", "lastLoginAt"
+        ])
+        && data.uid == uid
+        && data.role in ["student", "teacher"]
+        && data.demo == true;
     }
 
     function authRole() {
-      return isTeacher() ? "teacher" : (isStudent() ? "student" : "");
+      return isSchoolTeacher() ? "teacher" : (isSchoolStudent() ? "student" : "");
     }
 
     function isOwner(uid) {
-      return isApproved() && request.auth.uid == uid;
+      return (isSchoolTeacher() || isSchoolStudent()) && request.auth.uid == uid;
     }
 
     function uidUnchanged(uid) {
@@ -223,9 +256,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Public feature flags for the app / future web dashboard.
+    // Clients may only read; writes go through Admin SDK.
+    match /config/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /equipment/{equipmentId} {
       allow read: if isApproved();
-      allow create: if isTeacher()
+      // Demo teacher: loose writes for testing.
+      allow create, update, delete: if isDemoTeacher();
+      allow create: if isSchoolTeacher()
         && isValidEquipment(request.resource.data, equipmentId)
         && request.resource.data.status == "active"
         && request.resource.data.enrolledBy == request.auth.uid
@@ -234,7 +276,7 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
         && getAfter(/databases/$(database)/documents/tags/$(request.resource.data.activeTagId)).data.equipmentId == equipmentId
         && getAfter(/databases/$(database)/documents/equipmentSerials/$(request.resource.data.normalizedInternalSerial)).data.equipmentId == equipmentId;
-      allow update: if isTeacher()
+      allow update: if isSchoolTeacher()
         && isValidEquipment(request.resource.data, equipmentId)
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(["name", "internalSerial", "normalizedInternalSerial", "activeTagId", "status", "updatedBy", "updatedAt"])
@@ -247,12 +289,13 @@ service cloud.firestore {
           || getAfter(/databases/$(database)/documents/tags/$(request.resource.data.activeTagId)).data.equipmentId == equipmentId)
         && (request.resource.data.normalizedInternalSerial == resource.data.normalizedInternalSerial
           || getAfter(/databases/$(database)/documents/equipmentSerials/$(request.resource.data.normalizedInternalSerial)).data.equipmentId == equipmentId);
-      allow delete: if false;
+      allow delete: if isSchoolTeacher() && resource.data.status == "retired";
     }
 
     match /tags/{tagId} {
       allow read: if isApproved();
-      allow create: if isTeacher()
+      allow create, update, delete: if isDemoTeacher();
+      allow create: if isSchoolTeacher()
         && isValidTag(request.resource.data, tagId)
         && request.resource.data.status == "active"
         && request.resource.data.enrolledBy == request.auth.uid
@@ -260,7 +303,7 @@ service cloud.firestore {
         && request.resource.data.replacedAt == null
         && request.resource.data.replacedBy == null
         && getAfter(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.activeTagId == tagId;
-      allow update: if isTeacher()
+      allow update: if isSchoolTeacher()
         && isValidTag(request.resource.data, tagId)
         && resource.data.status == "active"
         && request.resource.data.status == "replaced"
@@ -269,23 +312,31 @@ service cloud.firestore {
         && request.resource.data.replacedAt == request.time
         && request.resource.data.replacedBy == request.auth.uid
         && getAfter(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.activeTagId != tagId;
-      allow delete: if false;
+      allow delete: if isSchoolTeacher()
+        && exists(/databases/$(database)/documents/equipment/$(resource.data.equipmentId))
+        && get(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.status == "retired";
     }
 
     match /equipmentSerials/{serialId} {
-      allow read: if isTeacher();
-      allow create: if isTeacher()
+      allow read: if isSchoolTeacher() || isDemoTeacher();
+      allow create, delete: if isDemoTeacher();
+      allow create: if isSchoolTeacher()
         && isValidSerialGuard(request.resource.data, serialId)
         && request.resource.data.createdAt == request.time
         && getAfter(/databases/$(database)/documents/equipment/$(request.resource.data.equipmentId)).data.normalizedInternalSerial == serialId;
       allow update: if false;
-      allow delete: if isTeacher()
-        && getAfter(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.normalizedInternalSerial != serialId;
+      allow delete: if isSchoolTeacher()
+        && ((exists(/databases/$(database)/documents/equipment/$(resource.data.equipmentId))
+          && get(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.status == "retired")
+          || getAfter(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.normalizedInternalSerial != serialId);
     }
 
     match /checkoutBatches/{batchId} {
-      allow read: if isTeacher() || (isStudent() && resource.data.studentUid == request.auth.uid);
-      allow create: if isStudent()
+      allow read: if isSchoolTeacher() || isDemoTeacher()
+        || ((isSchoolStudent() || isDemoStudent()) && resource.data.studentUid == request.auth.uid);
+      allow create: if isDemoStudent()
+        && request.resource.data.studentUid == request.auth.uid;
+      allow create: if isSchoolStudent()
         && isValidCheckoutBatch(request.resource.data, batchId)
         && request.resource.data.studentUid == request.auth.uid
         && request.resource.data.studentEmail.lower() == authEmail()
@@ -294,8 +345,12 @@ service cloud.firestore {
     }
 
     match /claims/{claimId} {
-      allow read: if isTeacher() || (isStudent() && resource.data.studentUid == request.auth.uid);
-      allow create: if isStudent()
+      allow read: if isSchoolTeacher() || isDemoTeacher()
+        || ((isSchoolStudent() || isDemoStudent()) && resource.data.studentUid == request.auth.uid);
+      allow create: if isDemoStudent()
+        && request.resource.data.studentUid == request.auth.uid;
+      allow update, delete: if isDemoTeacher();
+      allow create: if isSchoolStudent()
         && isValidClaim(request.resource.data, claimId)
         && request.resource.data.studentUid == request.auth.uid
         && request.resource.data.studentEmail.lower() == authEmail()
@@ -309,7 +364,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/tags/$(request.resource.data.tagIdAtCheckout)).data.status == "active"
         && get(/databases/$(database)/documents/tags/$(request.resource.data.tagIdAtCheckout)).data.equipmentId == request.resource.data.equipmentId
         && getAfter(/databases/$(database)/documents/checkoutBatches/$(request.resource.data.checkoutBatchId)).data.studentUid == request.auth.uid;
-      allow update: if isTeacher()
+      allow update: if isSchoolTeacher()
         && isValidClaim(request.resource.data, claimId)
         && resource.data.status == "active"
         && request.resource.data.status == "returned"
@@ -319,13 +374,18 @@ service cloud.firestore {
         && request.resource.data.returnedAt == request.time
         && request.resource.data.returnedByTeacherUid == request.auth.uid
         && getAfter(/databases/$(database)/documents/returnBatches/$(request.resource.data.returnBatchId)).data.teacherUid == request.auth.uid;
-      allow delete: if false;
+      allow delete: if isSchoolTeacher()
+        && exists(/databases/$(database)/documents/equipment/$(resource.data.equipmentId))
+        && get(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.status == "retired";
     }
 
     match /issues/{issueId} {
-      allow read: if isTeacher()
-        || (isStudent() && resource.data.reportedByStudentUid == request.auth.uid);
-      allow create: if isStudent()
+      allow read: if isSchoolTeacher() || isDemoTeacher()
+        || ((isSchoolStudent() || isDemoStudent()) && resource.data.reportedByStudentUid == request.auth.uid);
+      allow create: if isDemoStudent()
+        && request.resource.data.reportedByStudentUid == request.auth.uid;
+      allow update, delete: if isDemoTeacher();
+      allow create: if isSchoolStudent()
         && isValidIssue(request.resource.data, issueId)
         && request.resource.data.reportedByStudentUid == request.auth.uid
         && request.resource.data.status == "open"
@@ -336,7 +396,7 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/claims/$(request.resource.data.claimId)).data.equipmentId == request.resource.data.equipmentId
         && getAfter(/databases/$(database)/documents/claims/$(request.resource.data.claimId)).data.condition == "has_issue"
         && getAfter(/databases/$(database)/documents/claims/$(request.resource.data.claimId)).data.issueText == request.resource.data.text;
-      allow update: if isTeacher()
+      allow update: if isSchoolTeacher()
         && isValidIssue(request.resource.data, issueId)
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(["status", "resolvedAt", "resolvedByTeacherUid"])
@@ -347,12 +407,16 @@ service cloud.firestore {
           || (request.resource.data.status != "resolved"
             && request.resource.data.resolvedAt == null
             && request.resource.data.resolvedByTeacherUid == null));
-      allow delete: if false;
+      allow delete: if isSchoolTeacher()
+        && exists(/databases/$(database)/documents/equipment/$(resource.data.equipmentId))
+        && get(/databases/$(database)/documents/equipment/$(resource.data.equipmentId)).data.status == "retired";
     }
 
     match /returnBatches/{batchId} {
-      allow read: if isTeacher();
-      allow create: if isTeacher()
+      allow read: if isSchoolTeacher() || isDemoTeacher();
+      allow create: if isDemoTeacher()
+        && request.resource.data.teacherUid == request.auth.uid;
+      allow create: if isSchoolTeacher()
         && isValidReturnBatch(request.resource.data, batchId)
         && request.resource.data.teacherUid == request.auth.uid
         && request.resource.data.createdAt == request.time;
@@ -360,8 +424,19 @@ service cloud.firestore {
     }
 
     match /auditEvents/{eventId} {
-      allow read: if isTeacher();
+      allow read: if isSchoolTeacher() || isDemoTeacher();
       allow write: if false;
+    }
+
+    // Demo role profile. Inventory/claims use the shared collections above.
+    match /demoUsers/{uid} {
+      allow read: if isDemo() && request.auth.uid == uid;
+      allow create: if isDemo() && request.auth.uid == uid
+        && isValidDemoUser(request.resource.data, uid);
+      allow update: if isDemo() && request.auth.uid == uid
+        && isValidDemoUser(request.resource.data, uid)
+        && request.resource.data.role == resource.data.role;
+      allow delete: if false;
     }
 
     match /{document=**} {

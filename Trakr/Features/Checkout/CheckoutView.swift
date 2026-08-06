@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CheckoutView: View {
     @EnvironmentObject private var store: TrakrStore
+    @EnvironmentObject private var featureFlags: FeatureFlagsStore
     @StateObject private var nfc = NFCService()
     @State private var staged: [StagedCheckoutItem] = []
     @State private var condition: ItemCondition?
@@ -53,17 +54,19 @@ struct CheckoutView: View {
                 Section {
                     ScanButton(title: "Scan NFC tag") { scan() }
                         .disabled(!store.isOnline)
-                    Menu {
-                        ForEach(store.equipment.filter(\.isActive)) { item in
-                            Button(item.name) { stage(item) }
-                                .disabled(staged.contains { $0.id == item.id })
+                    if featureFlags.flags.isDemo {
+                        Menu {
+                            ForEach(store.equipment.filter(\.isActive)) { item in
+                                Button(item.name) { stage(item) }
+                                    .disabled(staged.contains { $0.id == item.id })
+                            }
+                        } label: {
+                            Label("Add demo equipment", systemImage: "plus.circle")
+                                .frame(maxWidth: .infinity)
                         }
-                    } label: {
-                        Label("Add demo equipment", systemImage: "plus.circle")
-                            .frame(maxWidth: .infinity)
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("add-demo-equipment")
                     }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("add-demo-equipment")
                 } footer: {
                     if !store.isOnline {
                         Label("Connect to the internet before scanning.", systemImage: "wifi.slash")

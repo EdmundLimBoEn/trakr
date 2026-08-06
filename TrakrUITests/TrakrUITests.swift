@@ -7,12 +7,12 @@ final class TrakrUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--reset-data"]
+        app.launchArguments = ["--reset-data", "--local-demo"]
         app.launch()
     }
 
     func testStudentCanCompleteCheckout() {
-        app.buttons["demo-student"].tap()
+        chooseDemo("Student")
         XCTAssertTrue(app.navigationBars["Collect"].waitForExistence(timeout: 3))
 
         app.buttons["add-demo-equipment"].tap()
@@ -31,7 +31,7 @@ final class TrakrUITests: XCTestCase {
     }
 
     func testTeacherCanRecordNoClaimReturn() {
-        app.buttons["demo-teacher"].tap()
+        chooseDemo("Teacher")
         XCTAssertTrue(app.navigationBars["Overview"].waitForExistence(timeout: 3))
         app.tabBars.buttons.matching(identifier: "arrow.uturn.backward.circle.fill").firstMatch.tap()
 
@@ -47,7 +47,7 @@ final class TrakrUITests: XCTestCase {
     }
 
     func testTeacherCanEnrollAndReplaceDemoTag() {
-        app.buttons["demo-teacher"].tap()
+        chooseDemo("Teacher")
         XCTAssertTrue(app.navigationBars["Overview"].waitForExistence(timeout: 3))
         app.tabBars.buttons.matching(identifier: "camera.fill").firstMatch.tap()
         app.buttons["enroll-equipment"].tap()
@@ -64,5 +64,10 @@ final class TrakrUITests: XCTestCase {
         app.buttons["replace-demo"].tap()
 
         XCTAssertTrue(app.navigationBars["LED Panel"].waitForExistence(timeout: 3))
+    }
+
+    private func chooseDemo(_ role: String) {
+        app.buttons["demo-account-menu"].tap()
+        app.buttons[role].tap()
     }
 }

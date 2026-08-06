@@ -1,0 +1,13 @@
+{
+  "isDemo": true,
+  "googleSignInEnabled": true,
+  "checkoutEnabled": true,
+  "returnsEnabled": true,
+  "enrollmentEnabled": true,
+  "historyEnabled": true,
+  "activityEnabled": true,
+  "maintenanceMode": false,
+  "simulateOfflineVisible": true,
+  "updatedBy": "seed",
+  "updatedAt": "2026-08-06T00:00:00.000Z"
+}

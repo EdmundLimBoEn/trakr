@@ -33,13 +33,16 @@ final class TrakrStore: ObservableObject {
             currentUser = user
             isCloudSession = true
             Task { try? await refreshFromFirebase() }
+        } else if let demoUser = firebase.restoreDemoSession() {
+            currentUser = demoUser
+            isCloudSession = true
+            Task { try? await refreshFromFirebase() }
         }
     }
 
     func signInWithGoogle() async throws {
         let user = try await firebase.signIn()
-        currentUser = user
-        isCloudSession = true
+        beginCloudSession(as: user)
         try await refreshFromFirebase()
     }
 
@@ -55,10 +58,40 @@ final class TrakrStore: ObservableObject {
         processOverdue()
     }
 
-    func useDemo(role: UserRole) {
+    func useDemo(role: UserRole) async throws {
+        guard !ProcessInfo.processInfo.arguments.contains("--disable-demo") else {
+            throw TrakrError.unsupportedDomain
+        }
+        guard !ProcessInfo.processInfo.arguments.contains("--local-demo") else {
+            useLocalDemo(role: role)
+            return
+        }
+        let user = try await firebase.signInDemo(role: role)
+        beginCloudSession(as: user)
+        if role == .teacher {
+            try await firebase.seedDemoDataIfNeeded()
+        }
+        try await refreshFromFirebase()
+    }
+
+    private func beginCloudSession(as user: GearUser) {
+        currentUser = user
+        isCloudSession = true
+        // Drop any previously persisted local seed inventory so the UI
+        // reflects the shared cloud inventory after refresh.
+        equipment = []
+        claims = []
+        issues = []
+        notifications = []
+        auditEvents = []
+        inactiveTagIDs = []
+        requestResults = [:]
+    }
+
+    func useLocalDemo(role: UserRole) {
         try? firebase.signOut()
         isCloudSession = false
-        let email = role == .teacher ? "teacher@sst.edu.sg" : "alex@students.ssts.edu.sg"
+        let email = role == .teacher ? "teacher@sst.edu.sg" : "alex.lim@s2026.ssts.edu.sg"
         currentUser = GearUser(id: "demo-\(role.rawValue)", email: email, displayName: role == .teacher ? "Ms Tan" : "Alex Lim", role: role)
         processOverdue()
     }
@@ -124,6 +157,15 @@ final class TrakrStore: ObservableObject {
             return
         }
         try await firebase.updateEquipment(id: id, name: name, serial: serial, isActive: isActive)
+        try await refreshFromFirebase()
+    }
+
+    func deleteEquipmentForWorkflow(id: String) async throws {
+        guard isCloudSession else {
+            try deleteEquipment(id: id)
+            return
+        }
+        try await firebase.deleteEquipment(id: id)
         try await refreshFromFirebase()
     }
 
@@ -244,6 +286,20 @@ final class TrakrStore: ObservableObject {
         auditEvents.append(AuditEvent(id: UUID().uuidString, kind: .equipmentUpdated, actorID: teacher.id, equipmentIDs: [id], claimIDs: [], createdAt: .now))
         persist()
         return equipment[index]
+    }
+
+    func deleteEquipment(id: String) throws {
+        let _ = try requireTeacher()
+        try requireOnline()
+        guard let item = equipment.first(where: { $0.id == id }) else { throw TrakrError.unknownTag }
+
+        equipment.removeAll { $0.id == id }
+        claims.removeAll { $0.equipmentID == id }
+        issues.removeAll { $0.equipmentID == id }
+        notifications.removeAll { $0.equipmentIDs.contains(id) }
+        auditEvents.removeAll { $0.equipmentIDs.contains(id) }
+        inactiveTagIDs.insert(item.tagID)
+        persist()
     }
 
     @discardableResult

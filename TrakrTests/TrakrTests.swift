@@ -57,7 +57,7 @@ final class TrakrTests: XCTestCase {
     @MainActor
     func testCheckoutAllowsMultipleClaimsAndIsIdempotent() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
-        store.useDemo(role: .student)
+        store.useLocalDemo(role: .student)
         let equipment = try XCTUnwrap(store.equipment.first)
         let staged = [StagedCheckoutItem(equipment: equipment)]
 
@@ -73,13 +73,13 @@ final class TrakrTests: XCTestCase {
     @MainActor
     func testReturnClosesEveryActiveClaimAndIsIdempotent() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
-        store.useDemo(role: .student)
+        store.useLocalDemo(role: .student)
         let equipment = try XCTUnwrap(store.equipment.first)
         let staged = [StagedCheckoutItem(equipment: equipment)]
         _ = try store.confirmCheckout(items: staged, condition: .noIssues, requestID: "checkout-1")
         _ = try store.confirmCheckout(items: staged, condition: .noIssues, requestID: "checkout-2")
 
-        store.useDemo(role: .teacher)
+        store.useLocalDemo(role: .teacher)
         let candidates = [ReturnCandidate(equipment: equipment, activeClaims: store.activeClaims(for: equipment.id))]
         XCTAssertEqual(try store.confirmReturn(items: candidates, requestID: "return-1").resolvedCount, 2)
         XCTAssertEqual(try store.confirmReturn(items: candidates, requestID: "return-1").resolvedCount, 2)
@@ -90,7 +90,7 @@ final class TrakrTests: XCTestCase {
     @MainActor
     func testIssueRequiresText() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
-        store.useDemo(role: .student)
+        store.useLocalDemo(role: .student)
         let equipment = try XCTUnwrap(store.equipment.first)
         let invalid = StagedCheckoutItem(equipment: equipment, hasIssue: true, issueText: " ")
         XCTAssertThrowsError(try store.confirmCheckout(items: [invalid], condition: .hasIssue, requestID: "issue"))
@@ -100,7 +100,7 @@ final class TrakrTests: XCTestCase {
     @MainActor
     func testOfflineConfirmationDoesNotMutateState() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
-        store.useDemo(role: .student)
+        store.useLocalDemo(role: .student)
         store.simulateOffline = true
         let equipment = try XCTUnwrap(store.equipment.first)
         XCTAssertThrowsError(try store.confirmCheckout(items: [StagedCheckoutItem(equipment: equipment)], condition: .noIssues, requestID: "offline"))
@@ -110,7 +110,7 @@ final class TrakrTests: XCTestCase {
     @MainActor
     func testIssueLifecycleAndTeacherNotification() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
-        store.useDemo(role: .student)
+        store.useLocalDemo(role: .student)
         let equipment = try XCTUnwrap(store.equipment.first)
         let reported = StagedCheckoutItem(equipment: equipment, hasIssue: true, issueText: "Lens cap is cracked")
         _ = try store.confirmCheckout(items: [reported], condition: .hasIssue, requestID: "reported-issue")
@@ -119,7 +119,7 @@ final class TrakrTests: XCTestCase {
         XCTAssertEqual(issue.status, .open)
         XCTAssertEqual(store.notifications.filter { $0.kind == .issue && $0.recipientRole == .teacher }.count, 1)
 
-        store.useDemo(role: .teacher)
+        store.useLocalDemo(role: .teacher)
         try store.updateIssue(id: issue.id, status: .resolved)
         XCTAssertEqual(store.issues.first?.status, .resolved)
         XCTAssertNotNil(store.issues.first?.resolvedAt)
@@ -128,12 +128,12 @@ final class TrakrTests: XCTestCase {
     @MainActor
     func testReplacingTagPreservesClaimHistory() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
-        store.useDemo(role: .student)
+        store.useLocalDemo(role: .student)
         let equipment = try XCTUnwrap(store.equipment.first)
         let oldTag = equipment.tagID
         _ = try store.confirmCheckout(items: [StagedCheckoutItem(equipment: equipment)], condition: .noIssues, requestID: "before-replacement")
 
-        store.useDemo(role: .teacher)
+        store.useLocalDemo(role: .teacher)
         let newTag = TagCodec.generate()
         try store.replaceTag(equipmentID: equipment.id, tagID: newTag, hardwareUID: "0400AF")
 
@@ -148,7 +148,7 @@ final class TrakrTests: XCTestCase {
     @MainActor
     func testOverdueNotificationsAreRoleScopedAndIdempotent() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
-        store.useDemo(role: .student)
+        store.useLocalDemo(role: .student)
         let equipment = try XCTUnwrap(store.equipment.first)
         _ = try store.confirmCheckout(items: [StagedCheckoutItem(equipment: equipment)], condition: .noIssues, requestID: "overdue-claim")
 
@@ -163,7 +163,7 @@ final class TrakrTests: XCTestCase {
     @MainActor
     func testEquipmentValidationAndUpdate() throws {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
-        store.useDemo(role: .teacher)
+        store.useLocalDemo(role: .teacher)
         let equipment = try XCTUnwrap(store.equipment.first)
 
         XCTAssertThrowsError(try store.updateEquipment(id: equipment.id, name: "", serial: "X", isActive: true))
@@ -178,11 +178,11 @@ final class TrakrTests: XCTestCase {
         let store = TrakrStore(persistence: MemorySnapshotPersistence())
         let equipment = try XCTUnwrap(store.equipment.first)
 
-        store.useDemo(role: .student)
+        store.useLocalDemo(role: .student)
         XCTAssertThrowsError(try store.enroll(name: "Camera", serial: "NEW-1", tagID: TagCodec.generate(), hardwareUID: "01"))
         XCTAssertThrowsError(try store.confirmReturn(items: [ReturnCandidate(equipment: equipment, activeClaims: [])], requestID: "student-return"))
 
-        store.useDemo(role: .teacher)
+        store.useLocalDemo(role: .teacher)
         XCTAssertThrowsError(try store.confirmCheckout(items: [StagedCheckoutItem(equipment: equipment)], condition: .noIssues, requestID: "teacher-checkout"))
     }
 
@@ -233,5 +233,17 @@ final class TrakrTests: XCTestCase {
         XCTAssertEqual(decoded.issues, [issue])
         XCTAssertEqual(decoded.notifications, [notification])
         XCTAssertEqual(decoded.inactiveTagIDs, ["tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TC"])
+    }
+
+    func testFeatureFlagsParseRemoteDocument() {
+        let flags = FeatureFlags.fromFirestore([
+            "isDemo": false,
+            "maintenanceMode": true,
+            "googleSignInEnabled": true,
+        ])
+        XCTAssertFalse(flags.isDemo)
+        XCTAssertTrue(flags.maintenanceMode)
+        XCTAssertTrue(flags.googleSignInEnabled)
+        XCTAssertTrue(flags.checkoutEnabled)
     }
 }

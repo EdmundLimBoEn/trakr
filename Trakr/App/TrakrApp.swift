@@ -5,10 +5,14 @@ import SwiftUI
 @main
 struct TrakrApp: App {
     @StateObject private var store: TrakrStore
+    @StateObject private var featureFlags = FeatureFlagsStore()
     @StateObject private var connectivity = ConnectivityMonitor()
 
     init() {
         FirebaseApp.configure()
+        if let clientID = FirebaseApp.app()?.options.clientID {
+            GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+        }
         _store = StateObject(wrappedValue: TrakrStore())
     }
 
@@ -16,6 +20,7 @@ struct TrakrApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(store)
+                .environmentObject(featureFlags)
                 .tint(TrakrTheme.pink)
                 .preferredColorScheme(.dark)
                 .onReceive(connectivity.$isReachable) { store.setNetworkReachable($0) }
@@ -31,15 +36,36 @@ struct TrakrApp: App {
 
 struct RootView: View {
     @EnvironmentObject private var store: TrakrStore
+    @EnvironmentObject private var featureFlags: FeatureFlagsStore
 
     var body: some View {
         Group {
-            if store.currentUser == nil {
+            if featureFlags.flags.maintenanceMode {
+                MaintenanceView()
+            } else if store.currentUser == nil {
                 SignInView()
             } else {
                 HomeView()
             }
         }
         .animation(.snappy, value: store.currentUser)
+        .animation(.snappy, value: featureFlags.flags.maintenanceMode)
+    }
+}
+
+private struct MaintenanceView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "wrench.and.screwdriver.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(TrakrTheme.pink)
+            Text("Trakr is undergoing maintenance")
+                .font(.title2.weight(.semibold))
+            Text("Please try again later.")
+                .foregroundStyle(.secondary)
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.ignoresSafeArea())
     }
 }

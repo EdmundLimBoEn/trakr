@@ -2,24 +2,37 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var store: TrakrStore
+    @EnvironmentObject private var featureFlags: FeatureFlagsStore
+
+    private var flags: FeatureFlags { featureFlags.flags }
 
     var body: some View {
         TabView {
             if store.currentUser?.role == .student {
-                CheckoutView()
-                    .tabItem { Label("Collect", systemImage: "shippingbox.fill") }
-                ActivityView()
-                    .tabItem { Label("Activity", systemImage: "bell.fill") }
+                if flags.checkoutEnabled {
+                    CheckoutView()
+                        .tabItem { Label("Collect", systemImage: "shippingbox.fill") }
+                }
+                if flags.activityEnabled {
+                    ActivityView()
+                        .tabItem { Label("Activity", systemImage: "bell.fill") }
+                }
             } else {
                 TeacherDashboardView()
                     .tabItem { Label("Overview", systemImage: "rectangle.grid.2x2.fill") }
-                ReturnView()
-                    .tabItem { Label("Returns", systemImage: "arrow.uturn.backward.circle.fill") }
-                EquipmentListView()
-                    .tabItem { Label("Equipment", systemImage: "camera.fill") }
+                if flags.returnsEnabled {
+                    ReturnView()
+                        .tabItem { Label("Returns", systemImage: "arrow.uturn.backward.circle.fill") }
+                }
+                if flags.enrollmentEnabled {
+                    EquipmentListView()
+                        .tabItem { Label("Equipment", systemImage: "camera.fill") }
+                }
             }
-            HistoryView()
-                .tabItem { Label("History", systemImage: "clock.fill") }
+            if flags.historyEnabled {
+                HistoryView()
+                    .tabItem { Label("History", systemImage: "clock.fill") }
+            }
             ProfileView()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
         }
@@ -28,6 +41,7 @@ struct HomeView: View {
 
 private struct ProfileView: View {
     @EnvironmentObject private var store: TrakrStore
+    @EnvironmentObject private var featureFlags: FeatureFlagsStore
 
     var body: some View {
         NavigationStack {
@@ -44,12 +58,14 @@ private struct ProfileView: View {
                         StatusPill(text: user.role.title, color: TrakrTheme.pink)
                     }
                 }
-                Section("MVP controls") {
-                    LabeledContent("Network", value: store.isNetworkReachable ? "Connected" : "Unavailable")
-                    Toggle("Simulate offline", isOn: $store.simulateOffline)
-                    Text("Offline mode preserves staged items and blocks scan and confirmation until connectivity returns.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                if featureFlags.flags.simulateOfflineVisible {
+                    Section("MVP controls") {
+                        LabeledContent("Network", value: store.isNetworkReachable ? "Connected" : "Unavailable")
+                        Toggle("Simulate offline", isOn: $store.simulateOffline)
+                        Text("Offline mode preserves staged items and blocks scan and confirmation until connectivity returns.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Section {
                     Button("Sign out", role: .destructive) { store.signOut() }

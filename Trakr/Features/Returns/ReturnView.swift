@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ReturnView: View {
     @EnvironmentObject private var store: TrakrStore
+    @EnvironmentObject private var featureFlags: FeatureFlagsStore
     @StateObject private var nfc = NFCService()
     @State private var staged: [ReturnCandidate] = []
     @State private var requestID = UUID().uuidString
@@ -53,17 +54,19 @@ struct ReturnView: View {
                 Section {
                     ScanButton(title: "Scan return tag") { scan() }
                         .disabled(!store.isOnline)
-                    Menu {
-                        ForEach(store.equipment.filter(\.isActive)) { item in
-                            Button(item.name) { stage(item) }
-                                .disabled(staged.contains { $0.id == item.id })
+                    if featureFlags.flags.isDemo {
+                        Menu {
+                            ForEach(store.equipment.filter(\.isActive)) { item in
+                                Button(item.name) { stage(item) }
+                                    .disabled(staged.contains { $0.id == item.id })
+                            }
+                        } label: {
+                            Label("Add demo equipment", systemImage: "plus.circle")
+                                .frame(maxWidth: .infinity)
                         }
-                    } label: {
-                        Label("Add demo equipment", systemImage: "plus.circle")
-                            .frame(maxWidth: .infinity)
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("add-demo-return")
                     }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("add-demo-return")
                 } footer: {
                     if !store.isOnline {
                         Label("Reconnect before scanning or confirming.", systemImage: "wifi.slash")

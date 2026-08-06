@@ -305,6 +305,142 @@ describe("returns and issue lifecycle", () => {
   });
 });
 
+describe("shared demo and school inventory", () => {
+  const anonymousAuth = { firebase: { sign_in_provider: "anonymous" } };
+
+  function validDemoProfile(uid: string, role: "student" | "teacher") {
+    return {
+      uid,
+      displayName: "Demo User",
+      role,
+      demo: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp(),
+    };
+  }
+
+  test("lets demo teachers enroll into the shared inventory school students can read", async () => {
+    const demoTeacher = environment.authenticatedContext("demoTeacher", anonymousAuth).firestore();
+    await assertSucceeds(
+      setDoc(doc(demoTeacher, "demoUsers/demoTeacher"), validDemoProfile("demoTeacher", "teacher"))
+    );
+
+    const batch = writeBatch(demoTeacher);
+    batch.set(doc(demoTeacher, "equipment/demo-cam"), {
+      equipmentId: "demo-cam",
+      name: "Demo Camera",
+      internalSerial: "MC-DEMO-01",
+      normalizedInternalSerial: "MC-DEMO-01",
+      activeTagId: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TF",
+      status: "active",
+      enrolledBy: "demoTeacher",
+      enrolledAt: serverTimestamp(),
+      updatedBy: "demoTeacher",
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(doc(demoTeacher, "tags/tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TF"), {
+      tagId: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TF",
+      equipmentId: "demo-cam",
+      hardwareUidHex: "04A1B2C9",
+      chipFamily: "NFC Forum Type 2",
+      status: "active",
+      enrolledBy: "demoTeacher",
+      enrolledAt: serverTimestamp(),
+      replacedAt: null,
+      replacedBy: null,
+    });
+    batch.set(doc(demoTeacher, "equipmentSerials/MC-DEMO-01"), {
+      equipmentId: "demo-cam",
+      normalizedSerial: "MC-DEMO-01",
+      createdAt: serverTimestamp(),
+    });
+    await assertSucceeds(batch.commit());
+
+    const schoolStudent = environment.authenticatedContext("alex", alexClaims).firestore();
+    await assertSucceeds(getDoc(doc(schoolStudent, "equipment/demo-cam")));
+    await assertSucceeds(getDoc(doc(schoolStudent, "tags/tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TF")));
+  });
+
+  test("lets demo students check out shared equipment and denies demo students enroll", async () => {
+    const demoTeacher = environment.authenticatedContext("demoTeacher", anonymousAuth).firestore();
+    await assertSucceeds(
+      setDoc(doc(demoTeacher, "demoUsers/demoTeacher"), validDemoProfile("demoTeacher", "teacher"))
+    );
+
+    const demoStudent = environment.authenticatedContext("demoStudent", anonymousAuth).firestore();
+    await assertSucceeds(
+      setDoc(doc(demoStudent, "demoUsers/demoStudent"), validDemoProfile("demoStudent", "student"))
+    );
+    await assertSucceeds(getDoc(doc(demoStudent, "equipment/camera")));
+    await assertFails(
+      setDoc(doc(demoStudent, "equipment/tripod"), {
+        equipmentId: "tripod",
+        name: "Tripod",
+        internalSerial: "MC-TRI-02",
+        normalizedInternalSerial: "MC-TRI-02",
+        activeTagId: "tr:01J9Z6M4Y7X3N8K2D5P0Q1R4TD",
+        status: "active",
+        enrolledBy: "demoStudent",
+        enrolledAt: serverTimestamp(),
+        updatedBy: "demoStudent",
+        updatedAt: serverTimestamp(),
+      })
+    );
+
+    const batch = writeBatch(demoStudent);
+    batch.set(doc(demoStudent, "checkoutBatches/batch-1"), {
+      batchId: "batch-1",
+      studentUid: "demoStudent",
+      studentEmail: "alex.lim@s2026.ssts.edu.sg",
+      itemCount: 1,
+      createdAt: serverTimestamp(),
+    });
+    batch.set(doc(demoStudent, "claims/claim-1"), {
+      ...validClaim("claim-1", "batch-1", "demoStudent", "alex.lim@s2026.ssts.edu.sg"),
+    });
+    await assertSucceeds(batch.commit());
+  });
+
+  test("denies role escalation and foreign demo profile access", async () => {
+    const demoTeacher = environment.authenticatedContext("demoTeacher", anonymousAuth).firestore();
+    await assertSucceeds(
+      setDoc(doc(demoTeacher, "demoUsers/demoTeacher"), validDemoProfile("demoTeacher", "teacher"))
+    );
+
+    const demoStudent = environment.authenticatedContext("demoStudent", anonymousAuth).firestore();
+    await assertFails(getDoc(doc(demoStudent, "demoUsers/demoTeacher")));
+    await assertFails(
+      setDoc(doc(demoStudent, "demoUsers/demoTeacher"), validDemoProfile("demoTeacher", "student"))
+    );
+    await assertFails(
+      updateDoc(doc(demoTeacher, "demoUsers/demoTeacher"), {
+        ...validDemoProfile("demoTeacher", "student"),
+      })
+    );
+  });
+
+  test("denies anonymous users without a demo profile on shared collections", async () => {
+    const anonymous = environment.authenticatedContext("anon", anonymousAuth).firestore();
+    await assertFails(getDoc(doc(anonymous, "equipment/camera")));
+    await assertFails(setDoc(doc(anonymous, "users/anon"), { uid: "anon" }));
+  });
+
+  test("allows public reads of feature flags and denies client writes", async () => {
+    const unauthenticated = environment.unauthenticatedContext().firestore();
+    await environment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "config/featureFlags"), {
+        isDemo: true,
+        googleSignInEnabled: true,
+      });
+    });
+    await assertSucceeds(getDoc(doc(unauthenticated, "config/featureFlags")));
+    await assertFails(
+      setDoc(doc(unauthenticated, "config/featureFlags"), { isDemo: false })
+    );
+  });
+});
+
 test("unauthenticated clients are denied", async () => {
   const firestore = environment.unauthenticatedContext().firestore();
   await assertFails(getDoc(doc(firestore, "equipment/camera")));

@@ -30,6 +30,8 @@
 		F120B4647F0F4EA1A0ED0777 /* TrakrStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46A8A13E2955EF9D1D15DFA1 /* TrakrStore.swift */; };
 		F281CE2196086411AA091F2D /* NFCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C42D1A0E7310511F17AB1C3 /* NFCService.swift */; };
 		F95CBFCA6FC6B443B4E86317 /* TrakrTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2C68EAECFA4086F4C3191A /* TrakrTheme.swift */; };
+		B8F02D3C5E7081A2B3C4D5E6 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E91C2B4D6F8091A2B3C4D5 /* FeatureFlags.swift */; };
+		D0B24F5E7092A3C4D5E6F708 /* FeatureFlagsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A13E4D6F8192B3C4D5E6F7 /* FeatureFlagsStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +76,8 @@
 		F15AAC886F3D83A7A2ADE433 /* ReturnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnView.swift; sourceTree = "<group>"; };
 		F8B13BD16738BD071548394E /* TrakrUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TrakrUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAB20BD8D0AFD4DB58BD6BAC /* Trakr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Trakr.entitlements; sourceTree = "<group>"; };
+		A7E91C2B4D6F8091A2B3C4D5 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
+		C9A13E4D6F8192B3C4D5E6F7 /* FeatureFlagsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				5C56D5074E03F6377E7A48A8 /* Domain.swift */,
+				A7E91C2B4D6F8091A2B3C4D5 /* FeatureFlags.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -178,6 +183,7 @@
 			isa = PBXGroup;
 			children = (
 				7975F346860E5D9214B27A49 /* ConnectivityMonitor.swift */,
+				C9A13E4D6F8192B3C4D5E6F7 /* FeatureFlagsStore.swift */,
 				D72C73F387A3777E031998ED /* FirebaseGateway.swift */,
 				DFF3A868AC66F79B18D46DA1 /* PersistedStore.swift */,
 				46A8A13E2955EF9D1D15DFA1 /* TrakrStore.swift */,
@@ -397,6 +403,8 @@
 				C381C9463B7F5D310F775A5D /* CheckoutView.swift in Sources */,
 				EE0FC219FA99EDF59E15A749 /* ConnectivityMonitor.swift in Sources */,
 				0B5FBA4333826F2B0B3D714F /* Domain.swift in Sources */,
+				B8F02D3C5E7081A2B3C4D5E6 /* FeatureFlags.swift in Sources */,
+				D0B24F5E7092A3C4D5E6F708 /* FeatureFlagsStore.swift in Sources */,
 				257A7C8D5020ED19875BF579 /* EquipmentListView.swift in Sources */,
 				7806554BCE47D90DD9CC286D /* FirebaseGateway.swift in Sources */,
 				AFD38EF4F697011ABAC8782F /* HistoryView.swift in Sources */,

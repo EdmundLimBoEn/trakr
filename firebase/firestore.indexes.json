@@ -22,6 +22,22 @@
       "collectionGroup": "claims",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "studentUid", "order": "ASCENDING" },
+        { "fieldPath": "checkedOutAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "issues",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "reportedByStudentUid", "order": "ASCENDING" },
+        { "fieldPath": "reportedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "claims",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "overdueNotificationSentAt", "order": "ASCENDING" },
         { "fieldPath": "checkedOutAt", "order": "ASCENDING" }

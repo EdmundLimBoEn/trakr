@@ -2,95 +2,104 @@ import SwiftUI
 
 struct SignInView: View {
     @EnvironmentObject private var store: TrakrStore
-    @State private var email = ""
+    @EnvironmentObject private var featureFlags: FeatureFlagsStore
     @State private var error: Error?
     @State private var isSigningIn = false
 
+    private var flags: FeatureFlags { featureFlags.flags }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    Spacer(minLength: 54)
-                    TrakrMark(size: 76)
+            GeometryReader { proxy in
+                VStack(spacing: 18) {
+                    Image("TrakrLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 300, height: 160)
+                        .accessibilityLabel("Trakr")
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Know where every piece of gear is.")
-                            .font(.system(size: 40, weight: .bold, design: .rounded))
-                            .foregroundStyle(TrakrTheme.ink)
-                        Text("Scan. Collect. Return. Trakr replaces equipment forms with a tap.")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("Sign in to Trakr")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(TrakrTheme.ink)
 
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("School account")
-                            .font(.headline)
-                        Button {
-                            isSigningIn = true
-                            Task {
-                                do { try await store.signInWithGoogle() }
-                                catch { self.error = error }
-                                isSigningIn = false
+                    VStack(spacing: 12) {
+                        if flags.googleSignInEnabled {
+                            Button(action: signInWithGoogle) {
+                                Text(isSigningIn ? "Signing in…" : "Continue with Google")
+                                    .frame(maxWidth: .infinity)
+                                    .overlay(alignment: .leading) {
+                                        if isSigningIn {
+                                            ProgressView()
+                                                .padding(.leading, 18)
+                                        }
+                                    }
                             }
-                        } label: {
-                            HStack {
-                                if isSigningIn { ProgressView() }
-                                Text("Continue with Google")
-                            }
-                            .frame(maxWidth: .infinity)
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+                            .disabled(isSigningIn)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .disabled(isSigningIn)
 
-                        Text("Or use local school-email validation")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextField("name@school.ssts.edu.sg", text: $email)
-                            .textContentType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .padding()
-                            .background(TrakrTheme.surface, in: RoundedRectangle(cornerRadius: 14))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(.quaternary)
-                            }
-                        Button("Continue locally") {
-                            do { try store.signIn(email: email) }
-                            catch { self.error = error }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .frame(maxWidth: .infinity)
-                    }
+                        if flags.isDemo {
+                            Menu {
+                                Button {
+                                    Task { await useDemo(.student) }
+                                } label: {
+                                    Label("Student", systemImage: "person.fill")
+                                }
+                                .accessibilityIdentifier("demo-student")
 
-                    VStack(spacing: 10) {
-                        Text("Preview the complete MVP")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: 12) {
-                            demoButton("Student", icon: "person.fill", role: .student)
-                            demoButton("Teacher", icon: "person.badge.key.fill", role: .teacher)
+                                Button {
+                                    Task { await useDemo(.teacher) }
+                                } label: {
+                                    Label("Teacher", systemImage: "person.badge.key.fill")
+                                }
+                                .accessibilityIdentifier("demo-teacher")
+                            } label: {
+                                Text("Use demo account")
+                                    .font(.subheadline)
+                                    .frame(maxWidth: .infinity)
+                                    .overlay(alignment: .trailing) {
+                                        Image(systemName: "chevron.up.chevron.down")
+                                            .font(.caption.weight(.semibold))
+                                            .padding(.trailing, 12)
+                                    }
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .accessibilityIdentifier("demo-account-menu")
+                        }
+
+                        if !flags.googleSignInEnabled && !flags.isDemo {
+                            Text("Sign-in is temporarily unavailable.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
                         }
                     }
+                    .frame(maxWidth: 360)
                 }
                 .padding(24)
+                .frame(width: proxy.size.width, height: proxy.size.height)
             }
-            .background(TrakrTheme.paper.ignoresSafeArea())
+            .background(Color.black.ignoresSafeArea())
             .errorAlert($error)
         }
     }
 
-    private func demoButton(_ title: String, icon: String, role: UserRole) -> some View {
-        Button {
-            store.useDemo(role: role)
-        } label: {
-            Label(title, systemImage: icon)
-                .frame(maxWidth: .infinity)
+    private func signInWithGoogle() {
+        guard flags.googleSignInEnabled else { return }
+        isSigningIn = true
+        Task {
+            do { try await store.signInWithGoogle() }
+            catch is CancellationError { /* user dismissed the Google sheet */ }
+            catch { self.error = error }
+            isSigningIn = false
         }
-        .buttonStyle(.bordered)
-        .controlSize(.large)
-        .accessibilityIdentifier("demo-\(role.rawValue)")
+    }
+
+    private func useDemo(_ role: UserRole) async {
+        guard flags.isDemo else { return }
+        do { try await store.useDemo(role: role) }
+        catch { self.error = error }
     }
 }

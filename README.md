@@ -15,6 +15,8 @@ cp android/app/google-services.json.example android/app/google-services.json
 ```
 
 See [production-integration.md](docs/production-integration.md) for restrictions and pilot setup.
+Remote toggles (demo menu, maintenance mode, tabs, …) are documented in [feature-flags.md](docs/feature-flags.md).
+The Cloudflare ops dashboard (feature flags + inventory/claims/issues) is documented in [ops-dashboard.md](docs/ops-dashboard.md) and lives in [`dashboard/`](dashboard/).
 
 ## iOS
 
@@ -22,7 +24,7 @@ See [production-integration.md](docs/production-integration.md) for restrictions
 2. Open `Trakr.xcodeproj` in Xcode.
 3. Select an iPhone simulator or NFC-capable physical iPhone.
 4. Run the `Trakr` scheme.
-5. Sign in with an approved school Google account, or choose a local Student/Teacher demo.
+5. Sign in with an approved school Google account. When the `isDemo` feature flag is on, you can also choose a Student/Teacher demo account.
 
 The deployment target is iOS 17. Firebase and Google Sign-In are installed with Swift Package Manager.
 

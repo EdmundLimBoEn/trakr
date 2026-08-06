@@ -18,3 +18,5 @@ bun run --cwd firebase/functions deploy -- --project development
 ```
 
 Deploy publishes Firestore rules and indexes only. Overdue and alerts are calculated in-app.
+
+Feature flags live at `config/featureFlags` (public read). Seed from `firebase/seed/featureFlags.json`. See `docs/feature-flags.md`.

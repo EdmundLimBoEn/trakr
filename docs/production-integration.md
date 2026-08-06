@@ -14,8 +14,9 @@ The configured development project is `trakr-sst-2026`; create a separate Fireba
 
 1. Keep the project on Spark.
 2. Enable Google under Authentication → Sign-in method.
-3. Create the default Firestore database in Native mode and `asia-southeast1`.
-4. Run:
+3. Enable Anonymous under Authentication → Sign-in method (required for demo accounts; see below).
+4. Create the default Firestore database in Native mode and `asia-southeast1`.
+5. Run:
 
    ```sh
    bun install --cwd firebase/functions
@@ -43,6 +44,24 @@ Firebase client config files identify the apps. They are **not** admin credentia
    - iOS key: application restriction = iOS apps (`systems.edmundlim.trakr`)
    - Android key: application restriction = Android apps (package + SHA-1)
    - API restrictions: only Firebase / Identity Toolkit / related APIs you use
+
+## Google sign-in troubleshooting
+
+If "Continue with Google" hangs or fails, work through this checklist. The app logs each sign-in step to the unified log (subsystem `systems.edmundlim.trakr`, category `SignIn`); filter Console.app or the Xcode console by that subsystem to see exactly which step stalls.
+
+1. **Google provider enabled** — Firebase Console → Authentication → Sign-in method → Google is enabled with a support email set.
+2. **OAuth consent screen** — Google Cloud Console → APIs & Services → OAuth consent screen is configured and published (not left in a restricted/testing state that excludes school accounts).
+3. **iOS OAuth client matches the app** — Google Cloud Console → APIs & Services → Credentials contains an iOS OAuth 2.0 client whose client ID matches `CLIENT_ID` in `Trakr/GoogleService-Info.plist` and whose bundle ID is `systems.edmundlim.trakr`. The reversed client ID must be registered as a URL type in `Trakr/Resources/Info.plist` (already committed).
+4. **School Workspace allows the app** — student accounts (`*@s202X.ssts.edu.sg`) live in the SST Google Workspace. If the domain admin restricts third-party OAuth apps, sign-in fails or never completes for those accounts. An admin must allow Trakr's OAuth client under Admin console → Security → Access and data control → API controls → App access control.
+5. **Verified email** — the app and the Firestore rules both reject unverified accounts; Google Workspace accounts are verified by default.
+
+## Demo accounts
+
+Demo sign-in is gated by the `isDemo` **feature flag** (`config/featureFlags`). See [feature-flags.md](feature-flags.md). When the flag is on, the “Use demo account” menu signs in with Firebase Anonymous Authentication. Role is stored in `demoUsers/{uid}`; inventory, tags, claims, and returns use the **same** Firestore collections as school Google accounts.
+
+Demo teacher/student writes are intentionally loose for classroom testing. Turn `isDemo` off (and disable Anonymous auth) before a public launch.
+
+For hermetic local runs (UI tests, offline previews), launch with `--local-demo` (also forces `isDemo` on in the client).
 
 ## Spark limitations
 

@@ -1,0 +1,6 @@
+# Local Worker secrets (gitignored). Copy to .dev.vars and fill in.
+SESSION_SIGNING_KEY=dev-session-key-change-me
+BREAKGLASS_PATH=dev-breakglass-path
+BREAKGLASS_SECRET=dev-breakglass-secret
+FIREBASE_API_KEY=
+GOOGLE_SERVICE_ACCOUNT_JSON=

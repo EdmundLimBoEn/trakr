@@ -87,6 +87,7 @@ private struct EquipmentDetailView: View {
                             }
                         }
                     }
+                    EquipmentActionsSection(equipment: equipment)
                 }
                 .navigationTitle(equipment.name)
                 .toolbar {
@@ -104,6 +105,81 @@ private struct EquipmentDetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct EquipmentActionsSection: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var store: TrakrStore
+    let equipment: Equipment
+    @State private var showingRemovalConfirmation = false
+    @State private var showingDeletionConfirmation = false
+    @State private var error: Error?
+
+    var body: some View {
+        Section {
+            Button("Remove from inventory", role: .destructive) {
+                showingRemovalConfirmation = true
+            }
+            .disabled(!equipment.isActive)
+
+            Button("Delete permanently", role: .destructive) {
+                showingDeletionConfirmation = true
+            }
+        } header: {
+            Text("Inventory actions")
+        } footer: {
+            Text("Remove retires the item and preserves its history. Delete permanently removes the item, tag records, claims, and issue records for all teachers.")
+        }
+        .confirmationDialog(
+            "Remove this equipment from inventory?",
+            isPresented: $showingRemovalConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Remove from inventory", role: .destructive) {
+                remove()
+            }
+        } message: {
+            Text("The equipment will be retired and kept in history. Its tag will no longer be available for checkout.")
+        }
+        .confirmationDialog(
+            "Delete this equipment permanently?",
+            isPresented: $showingDeletionConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete permanently", role: .destructive) {
+                delete()
+            }
+        } message: {
+            Text("This removes the equipment, tags, claims, and issue records from the database. This cannot be undone.")
+        }
+        .errorAlert($error)
+    }
+
+    private func remove() {
+        Task {
+            do {
+                try await store.updateEquipmentForWorkflow(
+                    id: equipment.id,
+                    name: equipment.name,
+                    serial: equipment.internalSerial,
+                    isActive: false
+                )
+            } catch {
+                self.error = error
+            }
+        }
+    }
+
+    private func delete() {
+        Task {
+            do {
+                try await store.deleteEquipmentForWorkflow(id: equipment.id)
+                dismiss()
+            } catch {
+                self.error = error
+            }
+        }
     }
 }
 
@@ -173,6 +249,7 @@ private struct EditEquipmentView: View {
 private struct TagReplacementView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: TrakrStore
+    @EnvironmentObject private var featureFlags: FeatureFlagsStore
     @StateObject private var nfc = NFCService()
     let equipment: Equipment
     @State private var tagID = TagCodec.generate()
@@ -193,10 +270,12 @@ private struct TagReplacementView: View {
                         Label(isWriting ? "Writing…" : "Write replacement tag", systemImage: "sensor.tag.radiowaves.forward.fill")
                     }
                     .disabled(isWriting)
-                    Button("Use demo replacement") {
-                        replace(UID: String(format: "F00D%04X", Int.random(in: 0...65535)))
+                    if featureFlags.flags.isDemo {
+                        Button("Use demo replacement") {
+                            replace(UID: String(format: "F00D%04X", Int.random(in: 0...65535)))
+                        }
+                        .accessibilityIdentifier("replace-demo")
                     }
-                    .accessibilityIdentifier("replace-demo")
                 } footer: {
                     Text("The previous payload becomes invalid immediately. Existing claims and history continue to reference the same equipment.")
                 }
@@ -240,6 +319,7 @@ private struct TagReplacementView: View {
 private struct EnrollmentView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: TrakrStore
+    @EnvironmentObject private var featureFlags: FeatureFlagsStore
     @StateObject private var nfc = NFCService()
     @State private var name = ""
     @State private var serial = "MC-"
@@ -265,11 +345,13 @@ private struct EnrollmentView: View {
                         Label(isWriting ? "Writing…" : "Write NFC tag", systemImage: "sensor.tag.radiowaves.forward.fill")
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || serial.trimmingCharacters(in: .whitespaces).isEmpty || isWriting)
-                    Button("Enroll demo tag") {
-                        enroll(tagID: pendingTagID, UID: String(format: "F00D%04X", Int.random(in: 0...65535)))
+                    if featureFlags.flags.isDemo {
+                        Button("Enroll demo tag") {
+                            enroll(tagID: pendingTagID, UID: String(format: "F00D%04X", Int.random(in: 0...65535)))
+                        }
+                        .accessibilityIdentifier("enroll-demo")
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || serial.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
-                    .accessibilityIdentifier("enroll-demo")
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || serial.trimmingCharacters(in: .whitespaces).isEmpty)
                 } header: {
                     Text("NFC tag")
                 } footer: {
