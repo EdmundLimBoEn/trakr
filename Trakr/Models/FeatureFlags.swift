@@ -3,9 +3,9 @@ import Foundation
 /// Remote-configurable feature flags. Stored at Firestore `config/featureFlags`.
 /// A future web dashboard will write this document; clients only read it.
 struct FeatureFlags: Equatable, Sendable {
-    /// Show the “Use demo account” selector and simulator helper buttons.
+    /// Enable hidden demo sign-in (long-press Sign in with Google) and simulator helper buttons.
     var isDemo: Bool
-    /// Show Continue with Google on the sign-in screen.
+    /// Show Sign in with Google on the sign-in screen.
     var googleSignInEnabled: Bool
     /// Student Collect tab and checkout confirmation.
     var checkoutEnabled: Bool

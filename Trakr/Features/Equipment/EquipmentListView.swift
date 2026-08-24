@@ -10,18 +10,22 @@ struct EquipmentListView: View {
                 NavigationLink {
                     EquipmentDetailView(equipmentID: item.id)
                 } label: {
-                    HStack(spacing: 13) {
+                    HStack(spacing: 12) {
                         Image(systemName: icon(for: item.name))
                             .font(.title3)
-                            .frame(width: 38, height: 38)
-                            .foregroundStyle(TrakrTheme.pink)
-                            .background(TrakrTheme.blush, in: RoundedRectangle(cornerRadius: 10))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.name).font(.headline)
-                            Text(item.internalSerial).font(.subheadline).foregroundStyle(.secondary)
+                            .foregroundStyle(.tint)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.name)
+                            Text(item.internalSerial)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        StatusPill(text: "\(store.activeClaims(for: item.id).count) out", color: store.activeClaims(for: item.id).isEmpty ? .secondary : TrakrTheme.amber)
+                        StatusPill(
+                            text: "\(store.activeClaims(for: item.id).count) out",
+                            color: store.activeClaims(for: item.id).isEmpty ? .secondary : .orange
+                        )
                     }
                     .padding(.vertical, 4)
                 }

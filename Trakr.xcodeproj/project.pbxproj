@@ -21,8 +21,10 @@
 		ABE1FAAF1488E181B79E448B /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 84430D79EBD6C3082CA2F748 /* GoogleSignIn */; };
 		AFD38EF4F697011ABAC8782F /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0D9896703C35DB123CFA0B /* HistoryView.swift */; };
 		AFE39E70B981F41679FF5C24 /* TrakrUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DABDABC079B07BB00831031A /* TrakrUITests.swift */; };
+		B8F02D3C5E7081A2B3C4D5E6 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E91C2B4D6F8091A2B3C4D5 /* FeatureFlags.swift */; };
 		C381C9463B7F5D310F775A5D /* CheckoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BEDF3DF2163C1ECBC35F78 /* CheckoutView.swift */; };
 		CB724E3E615E4B52C6C50BD6 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 034139735DCAE7FCD8B006A9 /* FirebaseFirestore */; };
+		D0B24F5E7092A3C4D5E6F708 /* FeatureFlagsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A13E4D6F8192B3C4D5E6F7 /* FeatureFlagsStore.swift */; };
 		E16B2B50F56BB4C870244316 /* PersistedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFF3A868AC66F79B18D46DA1 /* PersistedStore.swift */; };
 		E1AC2A4DA2C4042CF6332B18 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C13BB30893AA2B49BDCF721 /* HomeView.swift */; };
 		EE0FC219FA99EDF59E15A749 /* ConnectivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7975F346860E5D9214B27A49 /* ConnectivityMonitor.swift */; };
@@ -30,8 +32,6 @@
 		F120B4647F0F4EA1A0ED0777 /* TrakrStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46A8A13E2955EF9D1D15DFA1 /* TrakrStore.swift */; };
 		F281CE2196086411AA091F2D /* NFCService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C42D1A0E7310511F17AB1C3 /* NFCService.swift */; };
 		F95CBFCA6FC6B443B4E86317 /* TrakrTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2C68EAECFA4086F4C3191A /* TrakrTheme.swift */; };
-		B8F02D3C5E7081A2B3C4D5E6 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E91C2B4D6F8091A2B3C4D5 /* FeatureFlags.swift */; };
-		D0B24F5E7092A3C4D5E6F708 /* FeatureFlagsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9A13E4D6F8192B3C4D5E6F7 /* FeatureFlagsStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,8 +65,10 @@
 		6FB486C388E7FA5F1C40B4D4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7975F346860E5D9214B27A49 /* ConnectivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityMonitor.swift; sourceTree = "<group>"; };
 		927AD6FF697A86859AE87B39 /* TrakrTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TrakrTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7E91C2B4D6F8091A2B3C4D5 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		AD0D9896703C35DB123CFA0B /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		C7BEDF3DF2163C1ECBC35F78 /* CheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutView.swift; sourceTree = "<group>"; };
+		C9A13E4D6F8192B3C4D5E6F7 /* FeatureFlagsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsStore.swift; sourceTree = "<group>"; };
 		CC2C68EAECFA4086F4C3191A /* TrakrTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrakrTheme.swift; sourceTree = "<group>"; };
 		CDE9E59725C60FDBA7B880CF /* Trakr.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Trakr.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D72C73F387A3777E031998ED /* FirebaseGateway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseGateway.swift; sourceTree = "<group>"; };
@@ -76,8 +78,6 @@
 		F15AAC886F3D83A7A2ADE433 /* ReturnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnView.swift; sourceTree = "<group>"; };
 		F8B13BD16738BD071548394E /* TrakrUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TrakrUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FAB20BD8D0AFD4DB58BD6BAC /* Trakr.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Trakr.entitlements; sourceTree = "<group>"; };
-		A7E91C2B4D6F8091A2B3C4D5 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
-		C9A13E4D6F8192B3C4D5E6F7 /* FeatureFlagsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -472,7 +472,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.trakr;
 				PRODUCT_NAME = Trakr;
 				SDKROOT = iphoneos;
@@ -651,7 +654,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = systems.edmundlim.trakr;
 				PRODUCT_NAME = Trakr;
 				SDKROOT = iphoneos;

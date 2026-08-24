@@ -14,22 +14,12 @@ struct CheckoutView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Tap each tag. Review once.")
-                            .font(.title2.bold())
-                        Text("Scan up to 20 items, then confirm their condition as one batch.")
-                            .foregroundStyle(.secondary)
-                    }
-                    .listRowInsets(EdgeInsets(top: 18, leading: 20, bottom: 18, trailing: 20))
-                }
-
                 if staged.isEmpty {
                     Section {
-                        EmptyState(icon: "sensor.tag.radiowaves.forward", title: "No equipment scanned", message: "Use Scan NFC tag, or add demo equipment in the simulator.")
+                        EmptyState(icon: "sensor.tag.radiowaves.forward", title: "No equipment scanned", message: "Scan an NFC tag to add it to this batch.")
                     }
                 } else {
-                    Section("Equipment · \(staged.count)") {
+                    Section("Equipment (\(staged.count))") {
                         ForEach($staged) { $item in
                             CheckoutItemRow(item: $item, showIssue: condition == .hasIssue)
                         }
@@ -173,8 +163,8 @@ private struct CheckoutItemRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(TrakrTheme.pink)
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.tint)
                 VStack(alignment: .leading) {
                     Text(item.equipment.name).font(.headline)
                     Text(item.equipment.internalSerial).font(.caption).foregroundStyle(.secondary)
@@ -200,39 +190,44 @@ private struct CheckoutReceiptView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(TrakrTheme.pink)
-                VStack(spacing: 6) {
-                    Text("Equipment checked out")
-                        .font(.title.bold())
-                    Text(receipt.timestamp.formatted(date: .abbreviated, time: .shortened))
-                        .foregroundStyle(.secondary)
+            List {
+                Section {
+                    VStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.tint)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 8)
+                        Text("Equipment checked out")
+                            .font(.title2.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                        Text(receipt.timestamp.formatted(date: .abbreviated, time: .shortened))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .multilineTextAlignment(.center)
+                    .listRowBackground(Color.clear)
                 }
-                VStack(spacing: 0) {
+
+                Section("Items") {
                     ForEach(receipt.equipment) { item in
-                        HStack {
-                            Text(item.name)
-                            Spacer()
-                            Text(item.internalSerial).foregroundStyle(.secondary)
-                        }
-                        .padding()
-                        if item.id != receipt.equipment.last?.id { Divider() }
+                        LabeledContent(item.name, value: item.internalSerial)
                     }
                 }
-                .background(TrakrTheme.surface, in: RoundedRectangle(cornerRadius: 18))
-                Text("Return equipment to a teacher when finished.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button("Done", action: done)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("receipt-done")
+
+                Section {
+                    Text("Return equipment to a teacher when finished.")
+                        .foregroundStyle(.secondary)
+                }
             }
-            .padding(24)
+            .navigationTitle("Receipt")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done", action: done)
+                        .accessibilityIdentifier("receipt-done")
+                }
+            }
             .interactiveDismissDisabled()
         }
     }

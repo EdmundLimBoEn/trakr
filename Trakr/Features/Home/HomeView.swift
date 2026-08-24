@@ -33,45 +33,66 @@ struct HomeView: View {
                 HistoryView()
                     .tabItem { Label("History", systemImage: "clock.fill") }
             }
-            ProfileView()
-                .tabItem { Label("Profile", systemImage: "person.crop.circle.fill") }
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
     }
 }
 
-private struct ProfileView: View {
+private struct SettingsView: View {
     @EnvironmentObject private var store: TrakrStore
     @EnvironmentObject private var featureFlags: FeatureFlagsStore
+    @AppStorage("trakr.appearance") private var appearance: AppAppearance = .system
+    @AppStorage("trakr.accentColour") private var accentColour: AppAccentColour = .blue
 
     var body: some View {
         NavigationStack {
             List {
                 if let user = store.currentUser {
                     Section {
-                        HStack(spacing: 14) {
-                            TrakrMark(size: 52)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(user.displayName).font(.headline)
-                                Text(user.email).font(.subheadline).foregroundStyle(.secondary)
-                            }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(user.displayName)
+                            Text(user.email)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
-                        StatusPill(text: user.role.title, color: TrakrTheme.pink)
+                        LabeledContent("Role", value: user.role.title)
                     }
                 }
+
+                Section {
+                    Picker("Theme", selection: $appearance) {
+                        ForEach(AppAppearance.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    Picker("Accent colour", selection: $accentColour) {
+                        ForEach(AppAccentColour.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text("Theme follows Light, Dark, or the system setting. Accent colour tints buttons and selected controls.")
+                }
+
                 if featureFlags.flags.simulateOfflineVisible {
-                    Section("MVP controls") {
+                    Section {
                         LabeledContent("Network", value: store.isNetworkReachable ? "Connected" : "Unavailable")
                         Toggle("Simulate offline", isOn: $store.simulateOffline)
-                        Text("Offline mode preserves staged items and blocks scan and confirmation until connectivity returns.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    } header: {
+                        Text("Developer")
+                    } footer: {
+                        Text("Offline mode keeps staged items and blocks scan and confirmation until connectivity returns.")
                     }
                 }
+
                 Section {
-                    Button("Sign out", role: .destructive) { store.signOut() }
+                    Button("Sign Out", role: .destructive) { store.signOut() }
                 }
             }
-            .navigationTitle("Profile")
+            .navigationTitle("Settings")
         }
     }
 }

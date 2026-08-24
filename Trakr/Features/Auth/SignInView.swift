@@ -5,88 +5,96 @@ struct SignInView: View {
     @EnvironmentObject private var featureFlags: FeatureFlagsStore
     @State private var error: Error?
     @State private var isSigningIn = false
+    @State private var showingDemoPicker = false
+    @State private var ignoreNextGoogleTap = false
 
     private var flags: FeatureFlags { featureFlags.flags }
 
     var body: some View {
         NavigationStack {
-            GeometryReader { proxy in
-                VStack(spacing: 18) {
-                    Image("TrakrLogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 300, height: 160)
-                        .accessibilityLabel("Trakr")
+            VStack(spacing: 0) {
+                Spacer()
 
-                    Text("Sign in to Trakr")
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(TrakrTheme.ink)
-
-                    VStack(spacing: 12) {
-                        if flags.googleSignInEnabled {
-                            Button(action: signInWithGoogle) {
-                                Text(isSigningIn ? "Signing in…" : "Continue with Google")
-                                    .frame(maxWidth: .infinity)
-                                    .overlay(alignment: .leading) {
-                                        if isSigningIn {
-                                            ProgressView()
-                                                .padding(.leading, 18)
-                                        }
-                                    }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                            .disabled(isSigningIn)
-                        }
-
-                        if flags.isDemo {
-                            Menu {
-                                Button {
-                                    Task { await useDemo(.student) }
-                                } label: {
-                                    Label("Student", systemImage: "person.fill")
-                                }
-                                .accessibilityIdentifier("demo-student")
-
-                                Button {
-                                    Task { await useDemo(.teacher) }
-                                } label: {
-                                    Label("Teacher", systemImage: "person.badge.key.fill")
-                                }
-                                .accessibilityIdentifier("demo-teacher")
-                            } label: {
-                                Text("Use demo account")
-                                    .font(.subheadline)
-                                    .frame(maxWidth: .infinity)
-                                    .overlay(alignment: .trailing) {
-                                        Image(systemName: "chevron.up.chevron.down")
-                                            .font(.caption.weight(.semibold))
-                                            .padding(.trailing, 12)
-                                    }
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                            .accessibilityIdentifier("demo-account-menu")
-                        }
-
-                        if !flags.googleSignInEnabled && !flags.isDemo {
-                            Text("Sign-in is temporarily unavailable.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                    }
-                    .frame(maxWidth: 360)
+                VStack(spacing: 12) {
+                    TrakrMark(size: 72)
+                    Text("Trakr")
+                        .font(.largeTitle.weight(.bold))
+                    Text("School equipment checkout")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(24)
-                .frame(width: proxy.size.width, height: proxy.size.height)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Trakr")
+
+                Spacer()
+
+                VStack(spacing: 16) {
+                    if flags.googleSignInEnabled || flags.isDemo {
+                        Button(action: signInWithGoogle) {
+                            Text(isSigningIn ? "Signing in…" : "Sign in with Google")
+                                .frame(maxWidth: .infinity)
+                                .overlay(alignment: .leading) {
+                                    if isSigningIn {
+                                        ProgressView()
+                                            .padding(.leading, 18)
+                                    }
+                                }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(isSigningIn)
+                        .accessibilityIdentifier("sign-in-google")
+                        .simultaneousGesture(
+                            LongPressGesture(minimumDuration: 3)
+                                .onEnded { _ in
+                                    guard flags.isDemo else { return }
+                                    ignoreNextGoogleTap = true
+                                    showingDemoPicker = true
+                                }
+                        )
+                    }
+
+                    if !flags.googleSignInEnabled && !flags.isDemo {
+                        Text("Sign-in is temporarily unavailable.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    } else {
+                        Text("Use your school Google account.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 36)
             }
-            .background(Color.black.ignoresSafeArea())
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .confirmationDialog("Demo account", isPresented: $showingDemoPicker, titleVisibility: .visible) {
+                Button("Student") {
+                    Task { await useDemo(.student) }
+                }
+                .accessibilityIdentifier("demo-student")
+
+                Button("Teacher") {
+                    Task { await useDemo(.teacher) }
+                }
+                .accessibilityIdentifier("demo-teacher")
+
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Choose a local demo role.")
+            }
             .errorAlert($error)
         }
     }
 
     private func signInWithGoogle() {
+        if ignoreNextGoogleTap {
+            ignoreNextGoogleTap = false
+            return
+        }
         guard flags.googleSignInEnabled else { return }
         isSigningIn = true
         Task {

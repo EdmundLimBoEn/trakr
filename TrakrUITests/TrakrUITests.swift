@@ -67,7 +67,11 @@ final class TrakrUITests: XCTestCase {
     }
 
     private func chooseDemo(_ role: String) {
-        app.buttons["demo-account-menu"].tap()
-        app.buttons[role].tap()
+        let google = app.buttons["sign-in-google"]
+        XCTAssertTrue(google.waitForExistence(timeout: 5))
+        google.press(forDuration: 3)
+        let roleButton = app.buttons[role]
+        XCTAssertTrue(roleButton.waitForExistence(timeout: 3))
+        roleButton.tap()
     }
 }

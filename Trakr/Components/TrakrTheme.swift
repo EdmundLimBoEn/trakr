@@ -1,12 +1,67 @@
 import SwiftUI
 
-enum TrakrTheme {
-    static let ink = Color(red: 0.98, green: 0.95, blue: 0.97)
-    static let pink = Color(red: 0.949, green: 0.580, blue: 0.918)
-    static let blush = Color(red: 0.20, green: 0.13, blue: 0.19)
-    static let paper = Color(red: 0.06, green: 0.04, blue: 0.06)
-    static let surface = Color(red: 0.12, green: 0.09, blue: 0.12)
-    static let amber = Color(red: 0.95, green: 0.64, blue: 0.20)
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
+
+enum AppAccentColour: String, CaseIterable, Identifiable {
+    case system
+    case blue
+    case indigo
+    case purple
+    case pink
+    case red
+    case orange
+    case yellow
+    case green
+    case mint
+    case teal
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: "System"
+        case .pink: "Pink (original)"
+        default: rawValue.capitalized
+        }
+    }
+
+    var color: Color? {
+        switch self {
+        case .system: nil
+        case .blue: .blue
+        case .indigo: .indigo
+        case .purple: .purple
+        case .pink: Color(red: 0.949, green: 0.580, blue: 0.918)
+        case .red: .red
+        case .orange: .orange
+        case .yellow: .yellow
+        case .green: .green
+        case .mint: .mint
+        case .teal: .teal
+        }
+    }
 }
 
 struct TrakrMark: View {
@@ -17,13 +72,13 @@ struct TrakrMark: View {
             let width = proxy.size.width
             ZStack {
                 RoundedRectangle(cornerRadius: width * 0.28)
-                    .fill(TrakrTheme.pink)
+                    .fill(.tint)
                 Circle()
                     .fill(.white)
                     .frame(width: width * 0.47, height: width * 0.47)
                     .offset(x: -width * 0.14)
                 Circle()
-                    .fill(TrakrTheme.pink)
+                    .fill(.tint)
                     .frame(width: width * 0.10, height: width * 0.10)
                     .offset(x: -width * 0.14, y: -width * 0.13)
                 TrakrSignalWaves(lineWidth: width * 0.075)
@@ -106,6 +161,18 @@ struct ScanButton: View {
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
+    }
+}
+
+struct OptionalAccentTint: ViewModifier {
+    let color: Color?
+
+    func body(content: Content) -> some View {
+        if let color {
+            content.tint(color)
+        } else {
+            content
+        }
     }
 }
 

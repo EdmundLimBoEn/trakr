@@ -34,8 +34,8 @@ Unknown keys are ignored. Missing keys fall back to the app’s bundled defaults
 
 | Key | Type | Effect when `false` / `true` |
 |---|---|---|
-| `isDemo` | bool | **false:** hide “Use demo account”, hide simulator “Add/Enroll demo …” helpers, block `useDemo`. **true:** show them. Turn **off** before public launch. |
-| `googleSignInEnabled` | bool | Hides Continue with Google when false. |
+| `isDemo` | bool | **false:** hide demo sign-in and simulator “Add/Enroll demo …” helpers, block `useDemo`. **true:** enable a hidden demo picker (press and hold Sign in with Google for 3 seconds) and those helpers. Turn **off** before public launch. |
+| `googleSignInEnabled` | bool | Hides Sign in with Google when false. |
 | `checkoutEnabled` | bool | Hides student Collect tab / checkout flow. |
 | `returnsEnabled` | bool | Hides teacher Returns tab. |
 | `enrollmentEnabled` | bool | Hides Equipment enroll / replace controls. |

@@ -7,6 +7,8 @@ struct TrakrApp: App {
     @StateObject private var store: TrakrStore
     @StateObject private var featureFlags = FeatureFlagsStore()
     @StateObject private var connectivity = ConnectivityMonitor()
+    @AppStorage("trakr.appearance") private var appearance: AppAppearance = .system
+    @AppStorage("trakr.accentColour") private var accentColour: AppAccentColour = .blue
 
     init() {
         FirebaseApp.configure()
@@ -21,8 +23,8 @@ struct TrakrApp: App {
             RootView()
                 .environmentObject(store)
                 .environmentObject(featureFlags)
-                .tint(TrakrTheme.pink)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(appearance.colorScheme)
+                .modifier(OptionalAccentTint(color: accentColour.color))
                 .onReceive(connectivity.$isReachable) { store.setNetworkReachable($0) }
                 .onAppear {
                     if ProcessInfo.processInfo.arguments.contains("--reset-data") {
@@ -48,24 +50,19 @@ struct RootView: View {
                 HomeView()
             }
         }
-        .animation(.snappy, value: store.currentUser)
-        .animation(.snappy, value: featureFlags.flags.maintenanceMode)
+        .animation(.default, value: store.currentUser)
+        .animation(.default, value: featureFlags.flags.maintenanceMode)
     }
 }
 
 private struct MaintenanceView: View {
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "wrench.and.screwdriver.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(TrakrTheme.pink)
-            Text("Trakr is undergoing maintenance")
-                .font(.title2.weight(.semibold))
-            Text("Please try again later.")
-                .foregroundStyle(.secondary)
-        }
-        .padding(32)
+        ContentUnavailableView(
+            "Trakr is undergoing maintenance",
+            systemImage: "wrench.and.screwdriver",
+            description: Text("Please try again later.")
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black.ignoresSafeArea())
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
     }
 }

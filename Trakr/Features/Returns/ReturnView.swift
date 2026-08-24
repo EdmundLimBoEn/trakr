@@ -13,21 +13,12 @@ struct ReturnView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Scan returns")
-                            .font(.title2.bold())
-                        Text("Every active claim for each scanned item will be closed together.")
-                            .foregroundStyle(.secondary)
-                    }
-                    .listRowInsets(EdgeInsets(top: 18, leading: 20, bottom: 18, trailing: 20))
-                }
                 if staged.isEmpty {
                     Section {
                         EmptyState(icon: "arrow.uturn.backward.circle", title: "No returns staged", message: "Scan tags to see all active claimants before confirming.")
                     }
                 } else {
-                    Section("Return batch · \(staged.count)") {
+                    Section("Return batch (\(staged.count))") {
                         ForEach(staged) { candidate in
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
@@ -141,25 +132,19 @@ private struct ReturnConfirmationView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "arrow.uturn.backward.circle.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(TrakrTheme.pink)
-                VStack(spacing: 8) {
-                    Text("Return recorded")
-                        .font(.title.bold())
-                    Text(message)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+            ContentUnavailableView(
+                "Return recorded",
+                systemImage: "arrow.uturn.backward.circle",
+                description: Text(message)
+            )
+            .navigationTitle("Returns")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done", action: done)
+                        .accessibilityIdentifier("return-done")
                 }
-                Spacer()
-                Button("Done", action: done)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("return-done")
             }
-            .padding(24)
             .interactiveDismissDisabled()
         }
     }

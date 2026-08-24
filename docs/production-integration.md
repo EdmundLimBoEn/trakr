@@ -57,7 +57,7 @@ If "Continue with Google" hangs or fails, work through this checklist. The app l
 
 ## Demo accounts
 
-Demo sign-in is gated by the `isDemo` **feature flag** (`config/featureFlags`). See [feature-flags.md](feature-flags.md). When the flag is on, the “Use demo account” menu signs in with Firebase Anonymous Authentication. Role is stored in `demoUsers/{uid}`; inventory, tags, claims, and returns use the **same** Firestore collections as school Google accounts.
+Demo sign-in is gated by the `isDemo` **feature flag** (`config/featureFlags`). See [feature-flags.md](feature-flags.md). When the flag is on, press and hold **Sign in with Google** for 3 seconds to pick Student or Teacher. That path signs in with Firebase Anonymous Authentication. Role is stored in `demoUsers/{uid}`; inventory, tags, claims, and returns use the **same** Firestore collections as school Google accounts.
 
 Demo teacher/student writes are intentionally loose for classroom testing. Turn `isDemo` off (and disable Anonymous auth) before a public launch.
 

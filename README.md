@@ -24,7 +24,7 @@ The Cloudflare ops dashboard (feature flags + inventory/claims/issues) is docume
 2. Open `Trakr.xcodeproj` in Xcode.
 3. Select an iPhone simulator or NFC-capable physical iPhone.
 4. Run the `Trakr` scheme.
-5. Sign in with an approved school Google account. When the `isDemo` feature flag is on, you can also choose a Student/Teacher demo account.
+5. Sign in with an approved school Google account. When the `isDemo` feature flag is on, press and hold **Sign in with Google** for 3 seconds to pick a Student or Teacher demo account.
 
 The deployment target is iOS 17. Firebase and Google Sign-In are installed with Swift Package Manager.
 

@@ -41,7 +41,7 @@ struct TeacherDashboardView: View {
                     let unresolved = store.issues.filter { $0.status != .resolved }
                     if unresolved.isEmpty {
                         Label("No unresolved issues", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(TrakrTheme.pink)
+                            .foregroundStyle(.tint)
                     } else {
                         ForEach(unresolved) { issue in
                             IssueRow(issue: issue) { status in
@@ -86,7 +86,7 @@ struct TeacherDashboardView: View {
         VStack(spacing: 4) {
             Text(value.formatted())
                 .font(.title2.bold())
-                .foregroundStyle(TrakrTheme.pink)
+                .foregroundStyle(.primary)
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -117,7 +117,7 @@ private struct IssueRow: View {
                         Button(status.title) { update(status) }
                     }
                 } label: {
-                    StatusPill(text: issue.status.title, color: issue.status == .open ? .orange : TrakrTheme.pink)
+                    StatusPill(text: issue.status.title, color: issue.status == .open ? .orange : .accentColor)
                 }
             }
             Text(issue.text)
@@ -170,7 +170,7 @@ private struct NotificationRow: View {
 
     private var color: Color {
         switch notification.kind {
-        case .checkout, .returned: TrakrTheme.pink
+        case .checkout, .returned: .accentColor
         case .issue, .overdue: .orange
         }
     }

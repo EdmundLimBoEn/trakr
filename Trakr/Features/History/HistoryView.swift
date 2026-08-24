@@ -13,7 +13,7 @@ struct HistoryView: View {
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: claim.status == .active ? "arrow.up.right.circle.fill" : "checkmark.circle.fill")
                                 .font(.title2)
-                                .foregroundStyle(claim.status == .active ? TrakrTheme.amber : TrakrTheme.pink)
+                                .foregroundStyle(claim.status == .active ? Color.orange : Color.accentColor)
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(store.equipment(withID: claim.equipmentID)?.name ?? "Equipment")
                                     .font(.headline)
@@ -35,7 +35,7 @@ struct HistoryView: View {
                                 }
                             }
                             Spacer()
-                            StatusPill(text: claim.status == .active ? "Active" : "Returned", color: claim.status == .active ? TrakrTheme.amber : TrakrTheme.pink)
+                            StatusPill(text: claim.status == .active ? "Active" : "Returned", color: claim.status == .active ? .orange : .accentColor)
                         }
                         .padding(.vertical, 5)
                     }
