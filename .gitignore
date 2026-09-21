@@ -11,3 +11,4 @@ ui-debug.log
 # Firebase client configs contain Google API keys — keep local only
 Trakr/GoogleService-Info.plist
 android/app/google-services.json
+.gstack/

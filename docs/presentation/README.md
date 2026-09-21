@@ -1,5 +1,7 @@
 # Trakr presentation
 
+The redesigned animated web deck is live at **https://trakr-presentation.edmundlim.workers.dev**. Its source is in [`../../presentation/`](../../presentation/). The PDF and PowerPoint below retain the original static design; the web deck supersedes their visual presentation.
+
 A five-minute pitch followed by a three-minute demonstration, grounded in repository snapshot `6467a41`.
 
 - **Trakr-pitch.pptx**: editable 16:9 slides with embedded presenter notes.
