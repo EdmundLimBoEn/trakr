@@ -1,67 +1,59 @@
-# Trakr technical presentation
+# Trakr presentation
 
-Six technical slides (~3½ minutes), a three-minute demo, and one Q&A appendix. Generated from src/slides.ts.
+Six short slides (~3½ minutes) and a three-minute demo. Generated from src/slides.ts.
 
-## 1. Equipment checkout, as a stateful system.
+## 1. Know who has it. Know it came back.
 
 **0:00–0:20 · 20 seconds**
 
-Trakr records equipment handovers in a school. A student scans an enrolled item, records its condition and creates a claim. A teacher confirms the return. The engineering problem is to keep identity, authorization and state changes consistent across native clients. We will focus on the data path, failure handling and the cost of each write batch.
+A camera leaves the school equipment room. Later, a teacher needs to know who borrowed it, what condition it was in, and whether it came back. Trakr connects those moments in one record, using an NFC tap and a school account. The aim is clearer handovers and less follow-up work.
 
-Source: README.md; Trakr/Models/Domain.swift; dashboard/README.md
+Source: README.md; problem framing is a hypothesis to validate with teachers.
 
-## 2. Two paths into the same datastore.
+## 2. The problem is the missing context.
 
-**0:20–0:55 · 35 seconds**
+**0:20–1:00 · 40 seconds**
 
-The NFC tag contains an item identifier, not borrower information. The native client resolves it to equipment. Firebase Authentication supplies the verified school identity, and Security Rules enforce the mobile data boundary. Clients write directly to Firestore; no Cloud Function is required for this path. Staff operations use a separate Cloudflare Worker. That Worker validates the staff session and authorizes operations before using a server-held service account. This is a separate trust boundary: privileged access needs its own validation and audit trail.
+A borrowing log can record a name, but the rest of the story may sit somewhere else: a message about damage, a verbal reminder, or an item dropped back on a shelf. The teacher then has to reconstruct who had it, whether the fault was already there and whether the return was checked. Students also benefit from a clear record of the condition they reported. We are not claiming every school has this problem at the same scale. The pilot needs to establish how often these gaps occur and how much staff time they consume.
 
-Source: Trakr/NFC/NFCService.swift; Trakr/Services/FirebaseGateway.swift; firebase/firestore.rules; dashboard/src/worker/auth.ts; dashboard/src/worker/ops.ts
+Source: Illustrative school workflow; no interview findings or measured savings are claimed.
 
-## 3. Checkout has explicit failure paths.
+## 3. Make the handover the moment of record.
 
-**0:55–1:40 · 45 seconds**
+**1:00–1:35 · 35 seconds**
 
-A scan first resolves an active enrolled tag to equipment. The staging list lets the student remove duplicates and capture issue text before confirmation. If the device is offline, the app keeps the staged list and blocks confirmation. Online, the client submits a checkout batch, claims and optional issues together. Security Rules recheck identity, schemas, equipment status and related records. The UI shows a receipt after a successful commit. A denial leaves no accepted batch; an uncertain network outcome needs reconciliation before retry. Atomicity means all these writes succeed together. It does not mean equipment has an exclusive reservation lock.
+Here is the use case we will demonstrate. A student borrows a camera and tripod. They scan both tags, see the staged items, report the camera’s loose strap and confirm checkout. The receipt gives them a record of what they took and the condition they reported. When the equipment comes back, a teacher reviews the active claims and confirms the return. The loose strap remains a separate issue to follow up. That distinction matters: returned equipment is not necessarily repaired equipment.
 
-Source: Trakr/Features/Checkout/CheckoutView.swift; Trakr/Services/TrakrStore.swift; Trakr/Services/FirebaseGateway.swift:276–330; firebase/firestore.rules:334–414
+Source: README.md; Trakr/Features/Checkout/CheckoutView.swift; Trakr/Features/Returns/ReturnView.swift; Trakr/Models/Domain.swift
 
-## 4. Equipment identity survives tag replacement.
+## 4. One tap connects the whole handover.
 
-**1:40–2:15 · 35 seconds**
+**1:35–2:15 · 40 seconds**
 
-Equipment is the durable identity; a tag is replaceable. Claims reference equipment and retain the tag used at checkout, so historical records survive a tag swap. A checkout batch groups claims. A return batch records the teacher and groups claim closures. Issues reference claims and equipment and have a separate resolution workflow. These are Firestore document references represented by IDs, not relational foreign keys. Multiple active claims per item are currently allowed. The issue arrows show the intended UI workflow; the rules permit a teacher to set any of the valid issue states, rather than enforcing a strictly forward-only state machine.
+This is the overall data flow. The school account tells Trakr who the person is, while the tag identifies the physical equipment. The student app brings the selected items and their condition into a checkout. After access checks, Firebase stores the related records together. The teacher can then view active claims, confirm a return and follow up on issues, updating the same shared record. Students see their own claims rather than another student’s borrowing history. This is the technical foundation behind the simple handover: identity, an item and a record that both sides can act on.
 
-Source: Trakr/Models/Domain.swift; Trakr/Services/FirebaseGateway.swift; firebase/firestore.rules:181–239, 382–414
+Source: Trakr/NFC/NFCService.swift; Trakr/Services/FirebaseGateway.swift; firebase/firestore.rules; dashboard/README.md
 
-## 5. Write volume scales with items and issues.
+## 5. Less chasing. Clearer accountability.
 
 **2:15–2:55 · 40 seconds**
 
-This chart is a deterministic count of writes constructed by the iOS gateway, not production telemetry. A checkout creates one batch document, one claim per item, and one issue document per affected item. So the total is one plus n plus k. Five items with two issues produce eight writes. The chart compares no issues against an issue on every item. Move either slider to explore the formula. The client accepts up to twenty items, but the arithmetic alone does not prove every batch is admissible under rule-evaluation limits. Reads, authentication, retries and operational audit writes are outside this count. A return writes one batch and updates c loaded claims.
+The value is that each question has a record to turn to. A teacher can see the active claimant, inspect the condition reported at checkout and confirm when the equipment comes back. Students get a clearer account of their own handover. A spreadsheet or form may be enough for some schools; Trakr needs to earn its place by making the complete workflow easier to finish. It requires internet to confirm and it is not a location tracker or an anti-theft system. The expected benefit is less chasing and ambiguity, but that benefit still needs to be measured.
 
-Source: Trakr/Services/FirebaseGateway.swift:276–352; firebase/firestore.rules:171–179
+Source: README.md; docs/production-integration.md; docs/mvp-verification.md. Benefits are hypotheses, not measured outcomes.
 
-## 6. The next work is validation, not more screens.
+## 6. Start with one equipment room.
 
 **2:55–3:30 · 35 seconds**
 
-The implementation deliberately keeps the backend small: direct atomic writes, database authorization and in-app overdue calculation. Those choices leave specific validation work. Test worst-case rule evaluation and interrupted requests, exercise real NFC hardware and approved school sign-in, and probe simultaneous checkout and return. Multiple claims make this an accountability system, not an exclusive booking system. Background alerts and tenant isolation would be future work. Repository tests exist, but hardware and school-environment evidence still need to be collected. In the demo, watch the records and state transitions rather than just the screens.
+The next step is one equipment room, one teacher sponsor and four weeks. Observe the current process first, then compare checkout time, completeness of records and staff follow-up while using Trakr. The business hypothesis is a school subscription, with onboarding support for inventory and tags. Before expanding, we need evidence that staff continue to use it, a buyer is willing to pay and support effort is manageable. Our ask is a focused pilot that answers those questions. Now we will show the borrowing and return workflow in three minutes.
 
-Source: docs/mvp-verification.md; docs/production-integration.md; TrakrTests; firebase/functions/test
+Source: Proposed pilot and commercial model; no customer traction, price or market-size claim.
 
-## 7. Watch the state change.
+## 7. Let’s borrow a camera.
 
 **3:30–6:30 · 3-minute demo**
 
-0:00–0:20: Show the prepared student account and two test items. 0:20–1:00: Scan both tags and inspect the staged list. 1:00–1:35: Mark a loose strap on one item, acknowledge the other condition, confirm and show the receipt. Explain that this gateway call creates four documents. 1:35–2:20: Switch to the teacher session, inspect active claimants and confirm return. 2:20–2:45: Show returned history and acknowledge the issue, explaining that returned does not mean repaired. 2:45–3:00: Close with the remaining validation work. Use a dedicated test environment, and explicitly identify any local simulation or fallback recording.
+0:00–0:20: Introduce the prepared student account and two enrolled test items. 0:20–1:00: Scan the camera and tripod and show the staging list. 1:00–1:35: Report the loose camera strap, acknowledge the tripod condition, confirm and show the receipt. 1:35–2:20: Switch to the teacher session, review active claimants and confirm return. 2:20–2:45: Show the returned record and acknowledge the issue, explaining that returned does not mean repaired. 2:45–3:00: Close with the pilot ask. Use a dedicated test environment; identify simulated NFC or local data clearly. Independent local sessions do not prove cross-device sync.
 
-Source: Trakr/Services/FirebaseGateway.swift:276–352; docs/presentation/demo-runbook.md
-
-## 8. Authorization is operation-specific.
-
-**Q&A only**
-
-The normal mobile path derives student or teacher roles from verified school email claims. Students can read their own claims and issues and create checkouts tied to their identity. Teachers can review records, manage inventory and confirm returns. Operations through the Worker require a staff session and separate server-side authorization. Demo accounts have intentionally relaxed rules and are not represented in this matrix. Before broader use, separate demo data and validate the deployed rule configuration. Multi-school access requires tenant isolation rather than only adding email domains.
-
-Source: firebase/firestore.rules:22–90, 241–442; dashboard/src/worker/auth.ts; dashboard/src/worker/ops.ts
+Source: docs/presentation/demo-runbook.md; README.md

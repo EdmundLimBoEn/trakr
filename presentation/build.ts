@@ -7,5 +7,5 @@ if (!result.success) throw new Error(result.logs.join('\n'));
 await cp('src/style.css', 'dist/style.css');
 const notes = slides.map(({ title, timing, script, source }) => ({ title, timing, script, source }));
 await writeFile('dist/notes.json', JSON.stringify(notes));
-await writeFile('speaker-notes.md', '# Trakr technical presentation\n\nSix technical slides (~3½ minutes), a three-minute demo, and one Q&A appendix. Generated from src/slides.ts.\n\n' + notes.map((n,i) => `## ${i+1}. ${n.title}\n\n**${n.timing}**\n\n${n.script}\n\nSource: ${n.source}\n`).join('\n'));
+await writeFile('speaker-notes.md', '# Trakr presentation\n\nSix short slides (~3½ minutes) and a three-minute demo. Generated from src/slides.ts.\n\n' + notes.map((n,i) => `## ${i+1}. ${n.title}\n\n**${n.timing}**\n\n${n.script}\n\nSource: ${n.source}\n`).join('\n'));
 console.log(`Built presentation and ${notes.length} speaker notes.`);
