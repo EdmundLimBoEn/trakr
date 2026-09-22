@@ -4,7 +4,7 @@ import type { OpsActor } from "../../shared/types";
 import { BREAKGLASS_STORAGE_KEY, logout, me } from "../api";
 
 const NAV = [
-  { to: "overview", label: "Overview" },
+  { to: "overview", label: "Live dashboard" },
   { to: "flags", label: "Feature flags" },
   { to: "equipment", label: "Equipment" },
   { to: "claims", label: "Claims" },

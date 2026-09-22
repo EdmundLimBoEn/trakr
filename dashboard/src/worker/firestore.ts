@@ -216,18 +216,22 @@ export class FirestoreClient {
     const params = new URLSearchParams();
     params.set("pageSize", String(opts?.pageSize ?? 500));
     if (opts?.orderBy) params.set("orderBy", opts.orderBy);
-    const qs = params.toString();
-    const res = await fetch(`${this.base()}/${collection}?${qs}`, {
-      headers: await this.authHeaders(),
-    });
-    if (!res.ok) throw new Error(`firestore-list ${collection}: ${res.status} ${await res.text()}`);
-    const body = (await res.json()) as {
-      documents?: Array<{ name: string; fields?: Record<string, FirestoreValue> }>;
-    };
-    return (body.documents ?? []).map((doc) => {
-      const obj = docToObject(doc);
-      return { ...obj, id: docIdFromName(doc.name) };
-    });
+    const rows: Array<Record<string, unknown> & { id: string }> = [];
+    let pageToken: string | undefined;
+    do {
+      if (pageToken) params.set("pageToken", pageToken);
+      const res = await fetch(`${this.base()}/${collection}?${params}`, {
+        headers: await this.authHeaders(),
+      });
+      if (!res.ok) throw new Error(`firestore-list ${collection}: ${res.status} ${await res.text()}`);
+      const body = (await res.json()) as {
+        documents?: Array<{ name: string; fields?: Record<string, FirestoreValue> }>;
+        nextPageToken?: string;
+      };
+      rows.push(...(body.documents ?? []).map(doc => ({ ...docToObject(doc), id: docIdFromName(doc.name) })));
+      pageToken = body.nextPageToken;
+    } while (pageToken);
+    return rows;
   }
 
   async runQuery(

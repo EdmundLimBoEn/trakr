@@ -12,3 +12,7 @@ GitHub secret scanning flagged Firebase client API keys in a public repo. Config
   - `android/app/google-services.json`
 - [ ] Confirm local files are still gitignored (`git status` should not list them)
 - [ ] Confirm secret-scanning alerts #1 and #2 are closed on GitHub
+
+## Live equipment demo
+
+- [ ] Sign in to the ops dashboard with a school teacher account, open **Live dashboard**, and check out then return an item using the Firebase-connected mobile app. Confirm its card changes on the next refresh. Browser interaction tests use isolated fixtures; the live authenticated phone-to-dashboard flow still needs this check.

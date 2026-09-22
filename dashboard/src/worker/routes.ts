@@ -195,6 +195,20 @@ export function createApiApp(): Hono<ApiEnv> {
     }
   });
 
+  api.get("/live", async (c) => {
+    c.header("Cache-Control", "no-store");
+    try {
+      const client = db(c);
+      const [equipment, claims, issues] = await Promise.all([
+        listEquipment(client), listClaims(client), listIssues(client),
+      ]);
+      return c.json({ projectId: c.env.FIREBASE_PROJECT_ID, readAt: new Date().toISOString(), equipment, claims, issues });
+    } catch (error) {
+      console.error("live-read-failed", error);
+      return c.json({ error: "Database read failed. Check the connection and try again." }, 503);
+    }
+  });
+
   api.get("/overview", async (c) => c.json(await getOverview(db(c))));
 
   api.get("/equipment", async (c) => c.json(await listEquipment(db(c))));
