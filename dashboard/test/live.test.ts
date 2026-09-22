@@ -22,19 +22,20 @@ test('checkout, overdue threshold, multiple claims, return and retirement states
 
 const env = { FIREBASE_PROJECT_ID: 'test-project', BREAKGLASS_SECRET: 'test-only-token', SESSION_SIGNING_KEY: 'test-only-key' };
 const app = new Hono().route('/api', createApiApp());
-const headers = { Authorization: 'Bearer test-only-token' };
 
-test('live endpoint requires authentication before reading the database', async () => {
+test('admin reads and writes still require authentication', async () => {
   const read = spyOn(FirestoreClient.prototype, 'listCollection');
-  const response = await app.request('/api/live', {}, env);
-  expect(response.status).toBe(401);
+  for (const [path, method] of [['/api/equipment', 'GET'], ['/api/users', 'GET'], ['/api/claims', 'GET'], ['/api/equipment/camera', 'PATCH'], ['/api/claims/return', 'POST'], ['/api/live', 'POST']]) {
+    const response = await app.request(path, { method }, env);
+    expect(response.status).toBe(401);
+  }
   expect(read).not.toHaveBeenCalled();
 });
 
 test('live endpoint returns real collection results and never caches them', async () => {
   spyOn(FirestoreClient.prototype, 'listCollection').mockImplementation(async collection =>
     collection === 'equipment' ? [{ id: 'camera', name: 'Camera', status: 'active' }] : []);
-  const response = await app.request('/api/live', { headers }, env);
+  const response = await app.request('/api/live', {}, env);
   const data = await response.json();
   expect(response.status).toBe(200);
   expect(response.headers.get('Cache-Control')).toBe('no-store');
@@ -47,7 +48,7 @@ test('live endpoint returns real collection results and never caches them', asyn
 test('failed collection reads do not return partial data or a success timestamp', async () => {
   spyOn(console, 'error').mockImplementation(() => {});
   spyOn(FirestoreClient.prototype, 'listCollection').mockRejectedValue(new Error('private database error'));
-  const response = await app.request('/api/live', { headers }, env);
+  const response = await app.request('/api/live', {}, env);
   expect(response.status).toBe(503);
   expect(await response.text()).not.toContain('private database error');
 });
@@ -63,4 +64,20 @@ test('collection reads follow every page and reject failures on later pages', as
   expect(String(fetchMock.mock.calls[1][0])).toContain('pageToken=page%2B2');
   fetchMock.mockResolvedValueOnce(Response.json({ nextPageToken: 'more' })).mockResolvedValueOnce(new Response('unavailable', { status: 503 }));
   await expect(db.listCollection('equipment')).rejects.toThrow('503');
+});
+
+
+test('public live response excludes identities and private issue text at the API boundary', async () => {
+  spyOn(FirestoreClient.prototype, 'listCollection').mockImplementation(async collection => {
+    if (collection === 'equipment') return [{ id: 'camera', enrolledBy: 'PRIVATE', updatedBy: 'PRIVATE' }];
+    if (collection === 'claims') return [{ id: 'loan', equipmentId: 'camera', studentUid: 'PRIVATE', studentEmail: 'PRIVATE', issueText: 'PRIVATE', returnedByTeacherUid: 'PRIVATE' }];
+    return [{ id: 'issue', equipmentId: 'camera', text: 'PRIVATE', reportedByStudentUid: 'PRIVATE', resolvedByTeacherUid: 'PRIVATE' }];
+  });
+  const response = await app.request('/api/live', {}, env);
+  expect(response.status).toBe(200);
+  const text = await response.text();
+  expect(text).not.toContain('PRIVATE');
+  const data = JSON.parse(text);
+  expect(Object.keys(data.claims[0]).sort()).toEqual(['claimId', 'equipmentId', 'status', 'condition', 'checkedOutAt', 'returnedAt'].sort());
+  expect(Object.keys(data.issues[0]).sort()).toEqual(['issueId', 'equipmentId', 'status', 'reportedAt', 'resolvedAt'].sort());
 });

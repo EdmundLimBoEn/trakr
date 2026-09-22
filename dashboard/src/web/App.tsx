@@ -41,10 +41,11 @@ function EmergencyRoutes() {
 function SsoRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<SignIn />} />
+      <Route path="/" element={<main className="page"><OverviewPage /></main>} />
+      <Route path="/overview" element={<main className="page"><OverviewPage /></main>} />
+      <Route path="/signin" element={<SignIn />} />
       <Route element={<SsoGate />}>
         <Route element={<Shell emergency={false} />}>
-          <Route path="/overview" element={<OverviewPage />} />
           <Route path="/flags" element={<FlagsPage />} />
           <Route path="/equipment" element={<EquipmentPage />} />
           <Route path="/claims" element={<ClaimsPage />} />

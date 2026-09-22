@@ -15,4 +15,4 @@ GitHub secret scanning flagged Firebase client API keys in a public repo. Config
 
 ## Live equipment demo
 
-- [ ] Sign in to the ops dashboard with a school teacher account, open **Live dashboard**, and check out then return an item using the Firebase-connected mobile app. Confirm its card changes on the next refresh. Browser interaction tests use isolated fixtures; the live authenticated phone-to-dashboard flow still needs this check.
+- [ ] Open the public ops dashboard and check out then return an item using the Firebase-connected mobile app. Confirm its card changes on the next refresh. Browser interaction tests use isolated fixtures; the live authenticated phone-to-dashboard flow still needs this check.

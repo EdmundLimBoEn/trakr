@@ -1,3 +1,4 @@
+import { publicRecords } from "../shared/live";
 import { Hono } from "hono";
 import type { Env } from "./env";
 import type { OpsActor } from "../shared/types";
@@ -55,7 +56,7 @@ function normalizeApiPath(path: string): string {
 
 function isPublicRoute(method: string, path: string): boolean {
   const p = normalizeApiPath(path);
-  if (method === "GET" && (p === "/health" || p === "/config")) return true;
+  if (method === "GET" && (p === "/health" || p === "/config" || p === "/live")) return true;
   if (method === "POST" && p === "/auth/session") return true;
   if (method === "POST" && p === "/auth/logout") return true;
   if (method === "GET" && p === "/auth/me") return true;
@@ -202,7 +203,7 @@ export function createApiApp(): Hono<ApiEnv> {
       const [equipment, claims, issues] = await Promise.all([
         listEquipment(client), listClaims(client), listIssues(client),
       ]);
-      return c.json({ projectId: c.env.FIREBASE_PROJECT_ID, readAt: new Date().toISOString(), equipment, claims, issues });
+      return c.json({ projectId: c.env.FIREBASE_PROJECT_ID, readAt: new Date().toISOString(), ...publicRecords(equipment, claims, issues) });
     } catch (error) {
       console.error("live-read-failed", error);
       return c.json({ error: "Database read failed. Check the connection and try again." }, 503);

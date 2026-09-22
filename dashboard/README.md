@@ -96,10 +96,12 @@ curl -H "Authorization: Bearer $BREAKGLASS_SECRET" \
 
 ## Live demo dashboard
 
-After signing in, open `/overview` and choose **Present dashboard** to hide navigation (Escape exits). The board reads the same `equipment`, `claims`, and `issues` collections as the Firebase-connected mobile apps every five seconds while visible. No sample inventory is substituted when reads fail. Search by name, serial, equipment ID or NFC tag; select a total to filter; click an item for document IDs and claim/issue timestamps. Student identities and issue text are omitted from this view for projection.
+Open `/` or `/overview` without signing in and choose **Present dashboard** to hide navigation (Escape exits). The board reads the same `equipment`, `claims`, and `issues` collections as the Firebase-connected mobile apps every five seconds while visible. No sample inventory is substituted when reads fail. Search by name, serial, equipment ID or NFC tag; select a total to filter; click an item for document IDs and claim/issue timestamps. Student identities and issue text are omitted from this view for projection.
 
 For a demo, enroll or check out an item on a Firebase-connected phone, watch its card update, then return it and watch active claims clear. Local-only mobile demo mode does not write to Firestore and will not appear here. Refresh can be paused between demonstrations to conserve Firestore reads. Each refresh reads all equipment, claim and issue documents, following pagination. These reads count toward the project's Firestore quota; this board is intended for short demos, not an unattended permanent display on Spark.
 
-The connection indicator reflects successful database reads, not merely Worker uptime. Failed reads preserve the previous data with a warning; readings older than 20 seconds are marked stale. `/api/live` requires the existing ops authentication and sends `Cache-Control: no-store`. Its collections are read independently, so a write during refresh can briefly straddle reads and settles on the next refresh.
+The connection indicator reflects successful database reads, not merely Worker uptime. Failed reads preserve the previous data with a warning; readings older than 20 seconds are marked stale. `/api/live` is public and read-only, returns only equipment fields and claim/issue state and timestamps, excludes user identities and issue text, and sends `Cache-Control: no-store`. Its collections are read independently, so a write during refresh can briefly straddle reads and settles on the next refresh.
 
 Validate with `npm run typecheck`, `npm run build`, and `bun test test/`.
+
+Administration remains authenticated at `/signin`; all existing management APIs remain protected.

@@ -24,7 +24,7 @@ export function SsoGate() {
   }
 
   if (state === "denied") {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/signin" replace />;
   }
 
   return <Outlet />;
