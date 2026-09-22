@@ -1,13 +1,11 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { slides } from './src/slides';
+import { cp, mkdir, writeFile } from 'node:fs/promises';
 await mkdir('dist', { recursive: true });
 await cp('public', 'dist', { recursive: true });
 const result = await Bun.build({ entrypoints: ['src/main.ts'], outdir: 'dist', target: 'browser', minify: true });
 if (!result.success) throw new Error(result.logs.join('\n'));
 await cp('src/style.css', 'dist/style.css');
-const script = await readFile('../docs/presentation/speaker-notes.md', 'utf8');
-const notes = script.split(/^## /m).slice(1).map(section => {
-  const lines = section.trim().split('\n\n');
-  return { title: lines[0].replace(/^\d+\. /, ''), timing: lines[1].replace(/\*\*/g, '').replace('Timing: ', ''), script: lines[2], source: lines.slice(3).join('\n\n').replace(/^Evidence: /, '') };
-});
+const notes = slides.map(({ title, timing, script, source }) => ({ title, timing, script, source }));
 await writeFile('dist/notes.json', JSON.stringify(notes));
+await writeFile('speaker-notes.md', '# Trakr technical presentation\n\nSix technical slides (~3½ minutes), a three-minute demo, and one Q&A appendix. Generated from src/slides.ts.\n\n' + notes.map((n,i) => `## ${i+1}. ${n.title}\n\n**${n.timing}**\n\n${n.script}\n\nSource: ${n.source}\n`).join('\n'));
 console.log(`Built presentation and ${notes.length} speaker notes.`);
