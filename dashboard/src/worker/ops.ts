@@ -23,10 +23,6 @@ function bool(value: unknown, fallback = false): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
-function isoNow(): string {
-  return new Date().toISOString();
-}
-
 function mapEquipment(doc: Record<string, unknown>, id: string): EquipmentRecord {
   return {
     equipmentId: str(doc.equipmentId) || id,
@@ -130,7 +126,7 @@ export async function updateFlags(
       next[key] = partial[key];
     }
   }
-  next.updatedAt = isoNow();
+  next.updatedAt = new Date();
   next.updatedBy = actor.email;
   await db.setDoc("config/featureFlags", next, true);
   await writeAudit(db, actor, "flags.update", ["config/featureFlags"], { keys: Object.keys(partial) });
@@ -214,7 +210,7 @@ export async function updateEquipment(
   const writes: Array<Record<string, unknown>> = [];
   const update: Record<string, unknown> = {
     updatedBy: actor.uid,
-    updatedAt: isoNow(),
+    updatedAt: new Date(),
   };
 
   if (patch.name !== undefined) {
@@ -236,7 +232,7 @@ export async function updateEquipment(
           fields: objectToFields({
             equipmentId: id,
             normalizedSerial: normalized,
-            createdAt: isoNow(),
+            createdAt: new Date(),
           }),
         },
         currentDocument: { exists: false },
@@ -281,7 +277,7 @@ export async function retireEquipment(db: FirestoreClient, id: string, actor: Op
         name: db.docName(`tags/${activeTagId}`),
         fields: objectToFields({
           status: "replaced",
-          replacedAt: isoNow(),
+          replacedAt: new Date(),
           replacedBy: actor.uid,
         }),
       },
@@ -296,7 +292,7 @@ export async function retireEquipment(db: FirestoreClient, id: string, actor: Op
         status: "retired",
         activeTagId: null,
         updatedBy: actor.uid,
-        updatedAt: isoNow(),
+        updatedAt: new Date(),
       }),
     },
     updateMask: { fieldPaths: ["status", "activeTagId", "updatedBy", "updatedAt"] },
@@ -347,7 +343,7 @@ export async function forceReturnClaims(
   }
 
   const batchId = randomId(12);
-  const returnedAt = isoNow();
+  const returnedAt = new Date();
   const writes: Array<Record<string, unknown>> = [
     {
       update: {
@@ -414,7 +410,7 @@ export async function updateIssueStatus(
   const update: Record<string, unknown> = { status };
   const mask = ["status"];
   if (status === "resolved") {
-    update.resolvedAt = isoNow();
+    update.resolvedAt = new Date();
     update.resolvedByTeacherUid = actor.uid;
     mask.push("resolvedAt", "resolvedByTeacherUid");
   }
@@ -461,7 +457,7 @@ export async function setUserActive(
     path,
     {
       active,
-      updatedAt: isoNow(),
+      updatedAt: new Date(),
     },
     true,
   );
@@ -550,6 +546,6 @@ export async function writeAudit(
     actorEmail: actor.email,
     surface: actor.surface,
     meta: meta ?? null,
-    createdAt: isoNow(),
+    createdAt: new Date(),
   });
 }
