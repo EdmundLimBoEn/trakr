@@ -76,17 +76,20 @@ function jsonError(status: number, message: string) {
   });
 }
 
-async function resolveActor(env: Env, request: Request): Promise<OpsActor | null> {
+async function resolveActor(env: Env, request: Request): Promise<OpsActor | Response | null> {
   const session = await readSession(env, request);
   if (session) return session;
 
-  const bearer = bearerToken(request);
-  if (bearer && verifyBreakglassSecret(env, bearer)) {
+  if (await readEmergencySession(env, request)) {
     return breakglassActor();
   }
 
-  if (await readEmergencySession(env, request)) {
-    return breakglassActor();
+  const bearer = bearerToken(request);
+  if (bearer) {
+    const key = `unlock:${clientIp(request)}`;
+    if (!checkRateLimit(key, false)) return jsonError(429, "rate-limited");
+    if (verifyBreakglassSecret(env, bearer)) return breakglassActor();
+    checkRateLimit(key);
   }
 
   return null;
@@ -99,6 +102,7 @@ export function createApiApp(): Hono<ApiEnv> {
     if (isPublicRoute(c.req.method, c.req.path)) return next();
 
     const actor = await resolveActor(c.env, c.req.raw);
+    if (actor instanceof Response) return actor;
     if (!actor) return jsonError(401, "unauthorized");
 
     if (isMutating(c.req.method) && actor.surface === "sso") {

@@ -43,12 +43,20 @@ const JWKS_TTL_MS = 60 * 60 * 1000;
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
 const RATE_WINDOW_MS = 60_000;
+const RATE_BUCKET_MAX = 10_000;
 
-/** Simple per-IP rate limit (~10 requests per minute). */
-export function checkRateLimit(ip: string): boolean {
+/** Simple per-IP rate limit (~10 requests per minute). Pass false to only check. */
+export function checkRateLimit(ip: string, countAttempt = true): boolean {
   const now = Date.now();
+  for (const [key, entry] of rateBuckets) {
+    if (now >= entry.resetAt) rateBuckets.delete(key);
+  }
   const bucket = rateBuckets.get(ip);
-  if (!bucket || now >= bucket.resetAt) {
+  if (!countAttempt) return !bucket || bucket.count < RATE_LIMIT_MAX;
+  if (!bucket) {
+    if (rateBuckets.size >= RATE_BUCKET_MAX) {
+      rateBuckets.delete(rateBuckets.keys().next().value!);
+    }
     rateBuckets.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
     return true;
   }
