@@ -1,4 +1,4 @@
-import { publicRecords } from "../shared/live";
+import { type LiveSnapshot, publicRecords } from "../shared/live";
 import { Hono } from "hono";
 import type { Env } from "./env";
 import type { OpsActor } from "../shared/types";
@@ -98,6 +98,9 @@ async function resolveActor(env: Env, request: Request): Promise<OpsActor | Resp
 
 export function createApiApp(): Hono<ApiEnv> {
   const api = new Hono<ApiEnv>();
+  // The worker creates one API app per isolate. Keep projects separate and share
+  // pending loads as well as successful public snapshots for five seconds.
+  const liveLoads = new Map<string, { promise: Promise<LiveSnapshot>; expiresAt: number }>();
 
   api.use("*", async (c, next) => {
     if (isPublicRoute(c.req.method, c.req.path)) return next();
@@ -209,11 +212,30 @@ export function createApiApp(): Hono<ApiEnv> {
   api.get("/live", async (c) => {
     c.header("Cache-Control", "no-store");
     try {
-      const client = db(c);
-      const [equipment, claims, issues] = await Promise.all([
-        listEquipment(client), listClaims(client), listIssues(client),
-      ]);
-      return c.json({ projectId: c.env.FIREBASE_PROJECT_ID, readAt: new Date().toISOString(), ...publicRecords(equipment, claims, issues) });
+      const projectId = c.env.FIREBASE_PROJECT_ID;
+      let load = liveLoads.get(projectId);
+      if (!load || load.expiresAt <= Date.now()) {
+        const client = db(c);
+        const entry = {
+          expiresAt: Infinity,
+          promise: Promise.all([listEquipment(client), listClaims(client), listIssues(client)])
+            .then(([equipment, claims, issues]) => {
+              const snapshot = { projectId, readAt: new Date().toISOString(), ...publicRecords(equipment, claims, issues) };
+              entry.expiresAt = Date.now() + 5_000;
+              return snapshot;
+            })
+            .catch((error: unknown) => {
+              liveLoads.delete(projectId);
+              throw error;
+            }),
+        };
+        liveLoads.set(projectId, entry);
+        load = entry;
+      }
+      const snapshot = await load.promise;
+      // publicRecords excludes user identities and private issue text.
+      c.header("Cache-Control", "public, max-age=5");
+      return c.json(snapshot);
     } catch (error) {
       console.error("live-read-failed", error);
       return c.json({ error: "Database read failed. Check the connection and try again." }, 503);
