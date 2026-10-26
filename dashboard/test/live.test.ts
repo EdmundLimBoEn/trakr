@@ -1,4 +1,4 @@
-import { afterEach, expect, mock, spyOn, test } from 'bun:test';
+import { afterEach, beforeEach, expect, mock, spyOn, test } from 'bun:test';
 import { Hono } from 'hono';
 import { equipmentState } from '../src/shared/live';
 import type { EquipmentRecord, ClaimRecord } from '../src/shared/types';
@@ -21,7 +21,8 @@ test('checkout, overdue threshold, multiple claims, return and retirement states
 });
 
 const env = { FIREBASE_PROJECT_ID: 'test-project', BREAKGLASS_SECRET: 'test-only-token', SESSION_SIGNING_KEY: 'test-only-key' };
-const app = new Hono().route('/api', createApiApp());
+let app: Hono;
+beforeEach(() => { app = new Hono().route('/api', createApiApp()); });
 
 test('admin reads and writes still require authentication', async () => {
   const read = spyOn(FirestoreClient.prototype, 'listCollection');
@@ -32,13 +33,13 @@ test('admin reads and writes still require authentication', async () => {
   expect(read).not.toHaveBeenCalled();
 });
 
-test('live endpoint returns real collection results and never caches them', async () => {
+test('live endpoint returns real collection results with a public five-second cache', async () => {
   spyOn(FirestoreClient.prototype, 'listCollection').mockImplementation(async collection =>
     collection === 'equipment' ? [{ id: 'camera', name: 'Camera', status: 'active' }] : []);
   const response = await app.request('/api/live', {}, env);
   const data = await response.json();
   expect(response.status).toBe(200);
-  expect(response.headers.get('Cache-Control')).toBe('no-store');
+  expect(response.headers.get('Cache-Control')).toBe('public, max-age=5');
   expect(data.projectId).toBe('test-project');
   expect(data.equipment[0].equipmentId).toBe('camera');
   expect(data.claims).toEqual([]);
@@ -80,4 +81,49 @@ test('public live response excludes identities and private issue text at the API
   const data = JSON.parse(text);
   expect(Object.keys(data.claims[0]).sort()).toEqual(['claimId', 'equipmentId', 'status', 'condition', 'checkedOutAt', 'returnedAt'].sort());
   expect(Object.keys(data.issues[0]).sort()).toEqual(['issueId', 'equipmentId', 'status', 'reportedAt', 'resolvedAt'].sort());
+});
+
+
+test('concurrent live requests and reads within five seconds share one completed snapshot', async () => {
+  let time = 1_000;
+  spyOn(Date, 'now').mockImplementation(() => time);
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const read = spyOn(FirestoreClient.prototype, 'listCollection').mockImplementation(async collection => {
+    await gate;
+    return collection === 'equipment' ? [{ id: 'camera', name: `Camera ${time}` }] : [];
+  });
+  const first = app.request('/api/live', {}, env);
+  const second = app.request('/api/live', {}, env);
+  // A load lasting longer than the TTL must still be shared while in flight.
+  time += 6_000;
+  const third = app.request('/api/live', {}, env);
+  release();
+  const responses = await Promise.all([first, second, third]);
+  expect(responses.map(response => response.status)).toEqual([200, 200, 200]);
+  const snapshots = await Promise.all(responses.map(response => response.json()));
+  expect(snapshots[1]).toEqual(snapshots[0]);
+  expect(snapshots[2]).toEqual(snapshots[0]);
+  expect(read.mock.calls.map(([collection]) => collection).sort()).toEqual(['claims', 'equipment', 'issues']);
+  expect(await (await app.request('/api/live', {}, env)).json()).toEqual(snapshots[0]);
+  time += 4_999;
+  expect(await (await app.request('/api/live', {}, env)).json()).toEqual(snapshots[0]);
+  expect(read).toHaveBeenCalledTimes(3);
+  time += 1;
+  const refreshed = await (await app.request('/api/live', {}, env)).json();
+  expect(read).toHaveBeenCalledTimes(6);
+  expect(refreshed.equipment[0].name).toBe(`Camera ${time}`);
+  expect(refreshed.equipment).not.toEqual(snapshots[0].equipment);
+});
+
+test('failed live loads are not cached and the next request retries', async () => {
+  spyOn(console, 'error').mockImplementation(() => {});
+  const read = spyOn(FirestoreClient.prototype, 'listCollection').mockRejectedValue(new Error('test failure'));
+  const failed = await app.request('/api/live', {}, env);
+  expect(failed.status).toBe(503);
+  expect(failed.headers.get('Cache-Control')).toBe('no-store');
+  read.mockResolvedValue([]);
+  const retried = await app.request('/api/live', {}, env);
+  expect(retried.status).toBe(200);
+  expect(read).toHaveBeenCalledTimes(6);
 });

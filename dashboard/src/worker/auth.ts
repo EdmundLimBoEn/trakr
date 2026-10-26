@@ -1,4 +1,5 @@
 import type { Env } from "./env";
+import { FirestoreClient } from "./firestore";
 import type { OpsActor } from "../shared/types";
 import { isTeacherEmail } from "../shared/types";
 import {
@@ -43,12 +44,45 @@ const JWKS_TTL_MS = 60 * 60 * 1000;
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
 const RATE_WINDOW_MS = 60_000;
+const RATE_BUCKET_MAX = 10_000;
 
-/** Simple per-IP rate limit (~10 requests per minute). */
-export function checkRateLimit(ip: string): boolean {
+export class DeactivatedSessionError extends Error {}
+
+const activeChecks = new Map<string, { expiresAt: number; active: Promise<boolean> }>();
+const ACTIVE_CHECK_TTL_MS = 60_000;
+const ACTIVE_CHECK_CACHE_MAX = 1000;
+
+async function sessionIsActive(env: Env, token: string, uid: string): Promise<boolean> {
   const now = Date.now();
+  const key = `${env.FIREBASE_PROJECT_ID}:${token}`;
+  const cached = activeChecks.get(key);
+  if (cached && now < cached.expiresAt) return cached.active;
+  for (const [key, entry] of activeChecks) {
+    if (now >= entry.expiresAt) activeChecks.delete(key);
+  }
+  if (activeChecks.size >= ACTIVE_CHECK_CACHE_MAX) {
+    activeChecks.delete(activeChecks.keys().next().value!);
+  }
+  const active = new FirestoreClient(env.FIREBASE_PROJECT_ID, env.GOOGLE_SERVICE_ACCOUNT_JSON)
+    .getDoc(`users/${encodeURIComponent(uid)}`)
+    .then(user => user?.active !== false);
+  // Cache the promise too, so concurrent requests share the same check.
+  activeChecks.set(key, { expiresAt: now + ACTIVE_CHECK_TTL_MS, active });
+  return active;
+}
+
+/** Simple per-IP rate limit (~10 requests per minute). Pass false to only check. */
+export function checkRateLimit(ip: string, countAttempt = true): boolean {
+  const now = Date.now();
+  for (const [key, entry] of rateBuckets) {
+    if (now >= entry.resetAt) rateBuckets.delete(key);
+  }
   const bucket = rateBuckets.get(ip);
-  if (!bucket || now >= bucket.resetAt) {
+  if (!countAttempt) return !bucket || bucket.count < RATE_LIMIT_MAX;
+  if (!bucket) {
+    if (rateBuckets.size >= RATE_BUCKET_MAX) {
+      rateBuckets.delete(rateBuckets.keys().next().value!);
+    }
     rateBuckets.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
     return true;
   }
@@ -144,6 +178,9 @@ export async function readSession(env: Env, request: Request): Promise<OpsActor 
   if (payload.exp <= Math.floor(Date.now() / 1000)) return null;
   if (payload.surface !== "sso" && payload.surface !== "breakglass") return null;
   if (!payload.uid || !payload.email) return null;
+  if (payload.surface === "sso" && !(await sessionIsActive(env, raw, payload.uid))) {
+    throw new DeactivatedSessionError("user-deactivated");
+  }
   return { uid: payload.uid, email: payload.email, surface: payload.surface };
 }
 

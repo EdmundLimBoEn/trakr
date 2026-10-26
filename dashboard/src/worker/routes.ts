@@ -1,4 +1,4 @@
-import { publicRecords } from "../shared/live";
+import { type LiveSnapshot, publicRecords } from "../shared/live";
 import { Hono } from "hono";
 import type { Env } from "./env";
 import type { OpsActor } from "../shared/types";
@@ -13,6 +13,7 @@ import {
   clientIp,
   createEmergencyCookie,
   createSessionCookie,
+  DeactivatedSessionError,
   readEmergencySession,
   readSession,
   requireTeacherEmail,
@@ -123,17 +124,20 @@ function validClaimIds(value: unknown): value is string[] {
     && new Set(value).size === value.length;
 }
 
-async function resolveActor(env: Env, request: Request): Promise<OpsActor | null> {
+async function resolveActor(env: Env, request: Request): Promise<OpsActor | Response | null> {
   const session = await readSession(env, request);
   if (session) return session;
 
-  const bearer = bearerToken(request);
-  if (bearer && verifyBreakglassSecret(env, bearer)) {
+  if (await readEmergencySession(env, request)) {
     return breakglassActor();
   }
 
-  if (await readEmergencySession(env, request)) {
-    return breakglassActor();
+  const bearer = bearerToken(request);
+  if (bearer) {
+    const key = `unlock:${clientIp(request)}`;
+    if (!checkRateLimit(key, false)) return jsonError(429, "rate-limited");
+    if (verifyBreakglassSecret(env, bearer)) return breakglassActor();
+    checkRateLimit(key);
   }
 
   return null;
@@ -141,11 +145,15 @@ async function resolveActor(env: Env, request: Request): Promise<OpsActor | null
 
 export function createApiApp(): Hono<ApiEnv> {
   const api = new Hono<ApiEnv>();
+  // The worker creates one API app per isolate. Keep projects separate and share
+  // pending loads as well as successful public snapshots for five seconds.
+  const liveLoads = new Map<string, { promise: Promise<LiveSnapshot>; expiresAt: number }>();
 
   api.use("*", async (c, next) => {
     if (isPublicRoute(c.req.method, c.req.path)) return next();
 
     const actor = await resolveActor(c.env, c.req.raw);
+    if (actor instanceof Response) return actor;
     if (!actor) return jsonError(401, "unauthorized");
 
     if (isMutating(c.req.method) && actor.surface === "sso") {
@@ -159,6 +167,9 @@ export function createApiApp(): Hono<ApiEnv> {
 
   api.onError((err, c) => {
     if (err instanceof BodyTooLargeError) return jsonError(413, "body-too-large");
+    if (err instanceof DeactivatedSessionError) {
+      return c.json({ error: "user-deactivated" }, 401, { "Set-Cookie": clearSessionCookie() });
+    }
     console.error("api-error", err);
     return jsonError(500, err instanceof Error ? err.message : "internal-error");
   });
@@ -183,6 +194,8 @@ export function createApiApp(): Hono<ApiEnv> {
     try {
       const { uid, email } = await verifyFirebaseIdToken(c.env.FIREBASE_PROJECT_ID, body.idToken);
       requireTeacherEmail(email);
+      const user = await db(c).getDoc(`users/${encodeURIComponent(uid)}`);
+      if (user?.active === false) return jsonError(403, "user-deactivated");
       const actor: OpsActor = { uid, email, surface: "sso" };
       const cookie = await createSessionCookie(
         c.env,
@@ -247,11 +260,30 @@ export function createApiApp(): Hono<ApiEnv> {
   api.get("/live", async (c) => {
     c.header("Cache-Control", "no-store");
     try {
-      const client = db(c);
-      const [equipment, claims, issues] = await Promise.all([
-        listEquipment(client), listClaims(client), listIssues(client),
-      ]);
-      return c.json({ projectId: c.env.FIREBASE_PROJECT_ID, readAt: new Date().toISOString(), ...publicRecords(equipment, claims, issues) });
+      const projectId = c.env.FIREBASE_PROJECT_ID;
+      let load = liveLoads.get(projectId);
+      if (!load || load.expiresAt <= Date.now()) {
+        const client = db(c);
+        const entry = {
+          expiresAt: Infinity,
+          promise: Promise.all([listEquipment(client), listClaims(client), listIssues(client)])
+            .then(([equipment, claims, issues]) => {
+              const snapshot = { projectId, readAt: new Date().toISOString(), ...publicRecords(equipment, claims, issues) };
+              entry.expiresAt = Date.now() + 5_000;
+              return snapshot;
+            })
+            .catch((error: unknown) => {
+              liveLoads.delete(projectId);
+              throw error;
+            }),
+        };
+        liveLoads.set(projectId, entry);
+        load = entry;
+      }
+      const snapshot = await load.promise;
+      // publicRecords excludes user identities and private issue text.
+      c.header("Cache-Control", "public, max-age=5");
+      return c.json(snapshot);
     } catch (error) {
       console.error("live-read-failed", error);
       return c.json({ error: "Database read failed. Check the connection and try again." }, 503);
