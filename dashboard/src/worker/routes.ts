@@ -13,6 +13,7 @@ import {
   clientIp,
   createEmergencyCookie,
   createSessionCookie,
+  DeactivatedSessionError,
   readEmergencySession,
   readSession,
   requireTeacherEmail,
@@ -115,6 +116,9 @@ export function createApiApp(): Hono<ApiEnv> {
   });
 
   api.onError((err, c) => {
+    if (err instanceof DeactivatedSessionError) {
+      return c.json({ error: "user-deactivated" }, 401, { "Set-Cookie": clearSessionCookie() });
+    }
     console.error("api-error", err);
     return jsonError(500, err instanceof Error ? err.message : "internal-error");
   });
@@ -139,6 +143,8 @@ export function createApiApp(): Hono<ApiEnv> {
     try {
       const { uid, email } = await verifyFirebaseIdToken(c.env.FIREBASE_PROJECT_ID, body.idToken);
       requireTeacherEmail(email);
+      const user = await db(c).getDoc(`users/${encodeURIComponent(uid)}`);
+      if (user?.active === false) return jsonError(403, "user-deactivated");
       const actor: OpsActor = { uid, email, surface: "sso" };
       const cookie = await createSessionCookie(
         c.env,
