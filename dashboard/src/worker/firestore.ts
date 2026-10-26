@@ -158,6 +158,10 @@ function docIdFromName(name: string): string {
   return parts[parts.length - 1] ?? name;
 }
 
+function encodePath(path: string): string {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
 export class FirestoreClient {
   constructor(
     private readonly projectId: string,
@@ -165,7 +169,7 @@ export class FirestoreClient {
   ) {}
 
   private base(): string {
-    return `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents`;
+    return `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(this.projectId)}/databases/(default)/documents`;
   }
 
   private async authHeaders(): Promise<HeadersInit> {
@@ -177,7 +181,7 @@ export class FirestoreClient {
   }
 
   async getDoc(path: string): Promise<Record<string, unknown> | null> {
-    const res = await fetch(`${this.base()}/${path}`, { headers: await this.authHeaders() });
+    const res = await fetch(`${this.base()}/${encodePath(path)}`, { headers: await this.authHeaders() });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`firestore-get ${path}: ${res.status} ${await res.text()}`);
     const doc = (await res.json()) as { name?: string; fields?: Record<string, FirestoreValue> };
@@ -191,7 +195,7 @@ export class FirestoreClient {
           .map((k) => `updateMask.fieldPaths=${encodeURIComponent(k)}`)
           .join("&")}`
       : "";
-    const res = await fetch(`${this.base()}/${path}${updateMask}`, {
+    const res = await fetch(`${this.base()}/${encodePath(path)}${updateMask}`, {
       method: "PATCH",
       headers: await this.authHeaders(),
       body: JSON.stringify({ fields }),
@@ -200,7 +204,7 @@ export class FirestoreClient {
   }
 
   async deleteDoc(path: string): Promise<void> {
-    const res = await fetch(`${this.base()}/${path}`, {
+    const res = await fetch(`${this.base()}/${encodePath(path)}`, {
       method: "DELETE",
       headers: await this.authHeaders(),
     });
@@ -220,7 +224,7 @@ export class FirestoreClient {
     let pageToken: string | undefined;
     do {
       if (pageToken) params.set("pageToken", pageToken);
-      const res = await fetch(`${this.base()}/${collection}?${params}`, {
+      const res = await fetch(`${this.base()}/${encodePath(collection)}?${params}`, {
         headers: await this.authHeaders(),
       });
       if (!res.ok) throw new Error(`firestore-list ${collection}: ${res.status} ${await res.text()}`);
@@ -257,7 +261,7 @@ export class FirestoreClient {
 
   async commit(writes: Array<Record<string, unknown>>): Promise<void> {
     const res = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents:commit`,
+      `${this.base()}:commit`,
       {
         method: "POST",
         headers: await this.authHeaders(),

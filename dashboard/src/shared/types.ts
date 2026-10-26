@@ -124,7 +124,7 @@ export function isOverdue(checkedOutAt: string | Date, now = new Date()): boolea
 
 export function normalizeSerial(value: string): { display: string; normalized: string } {
   const display = value.trim().replace(/\s+/g, " ");
-  if (display.length < 1 || display.length > 50) {
+  if (!/^[A-Za-z0-9_-]{1,50}$/.test(display)) {
     throw new Error("invalid-serial");
   }
   return { display, normalized: display.toUpperCase() };

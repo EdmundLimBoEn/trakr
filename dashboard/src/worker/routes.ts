@@ -77,6 +77,53 @@ function jsonError(status: number, message: string) {
   });
 }
 
+const MAX_JSON_BYTES = 64 * 1024;
+
+class BodyTooLargeError extends Error {}
+
+async function readJson(request: Request, fallback?: unknown): Promise<unknown> {
+  const reader = request.body?.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  if (reader) {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > MAX_JSON_BYTES) {
+          void reader.cancel().catch(() => {});
+          throw new BodyTooLargeError("body-too-large");
+        }
+        chunks.push(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch (err) {
+    if (fallback !== undefined) return fallback;
+    throw err;
+  }
+}
+
+function validClaimIds(value: unknown): value is string[] {
+  return Array.isArray(value)
+    && value.length >= 1 && value.length <= 400
+    && value.every(id => typeof id === "string" && id.length > 0
+      && !id.includes("/") && id !== "." && id !== ".."
+      && new TextEncoder().encode(id).byteLength <= 1500)
+    && new Set(value).size === value.length;
+}
+
 async function resolveActor(env: Env, request: Request): Promise<OpsActor | Response | null> {
   const session = await readSession(env, request);
   if (session) return session;
@@ -119,6 +166,7 @@ export function createApiApp(): Hono<ApiEnv> {
   });
 
   api.onError((err, c) => {
+    if (err instanceof BodyTooLargeError) return jsonError(413, "body-too-large");
     if (err instanceof DeactivatedSessionError) {
       return c.json({ error: "user-deactivated" }, 401, { "Set-Cookie": clearSessionCookie() });
     }
@@ -141,7 +189,7 @@ export function createApiApp(): Hono<ApiEnv> {
     if (!checkRateLimit(`session:${ip}`)) {
       return jsonError(429, "rate-limited");
     }
-    const body = (await c.req.json().catch(() => null)) as { idToken?: string } | null;
+    const body = (await readJson(c.req.raw, null)) as { idToken?: string } | null;
     if (!body?.idToken) return jsonError(400, "missing-id-token");
     try {
       const { uid, email } = await verifyFirebaseIdToken(c.env.FIREBASE_PROJECT_ID, body.idToken);
@@ -184,7 +232,7 @@ export function createApiApp(): Hono<ApiEnv> {
     if (!checkRateLimit(`unlock:${ip}`)) {
       return jsonError(429, "rate-limited");
     }
-    const body = (await c.req.json().catch(() => ({}))) as { token?: string };
+    const body = (await readJson(c.req.raw, {})) as { token?: string };
     const token = body.token ?? bearerToken(c.req.raw);
     if (!token || !verifyBreakglassSecret(c.env, token)) {
       return jsonError(401, "invalid-token");
@@ -200,7 +248,7 @@ export function createApiApp(): Hono<ApiEnv> {
   api.get("/flags", async (c) => c.json(await getFlags(db(c))));
 
   api.put("/flags", async (c) => {
-    const body = (await c.req.json()) as Partial<Record<(typeof FLAG_KEYS)[number], boolean>>;
+    const body = (await readJson(c.req.raw)) as Partial<Record<(typeof FLAG_KEYS)[number], boolean>>;
     const actor = c.get("actor");
     try {
       return c.json(await updateFlags(db(c), body, actor));
@@ -248,7 +296,7 @@ export function createApiApp(): Hono<ApiEnv> {
 
   api.patch("/equipment/:id", async (c) => {
     const id = c.req.param("id");
-    const body = (await c.req.json()) as { name?: string; internalSerial?: string };
+    const body = (await readJson(c.req.raw)) as { name?: string; internalSerial?: string };
     const actor = c.get("actor");
     try {
       return c.json(await updateEquipment(db(c), id, body, actor));
@@ -277,8 +325,11 @@ export function createApiApp(): Hono<ApiEnv> {
   });
 
   api.post("/claims/return", async (c) => {
-    const body = (await c.req.json()) as { claimIds?: string[] };
-    if (!body.claimIds?.length) return jsonError(400, "missing-claim-ids");
+    const body = (await readJson(c.req.raw)) as { claimIds?: string[] };
+    if (!body?.claimIds || (Array.isArray(body.claimIds) && body.claimIds.length === 0)) {
+      return jsonError(400, "missing-claim-ids");
+    }
+    if (!validClaimIds(body.claimIds)) return jsonError(400, "invalid-claim-ids");
     const actor = c.get("actor");
     try {
       return c.json(await forceReturnClaims(db(c), body.claimIds, actor));
@@ -294,7 +345,7 @@ export function createApiApp(): Hono<ApiEnv> {
 
   api.patch("/issues/:id", async (c) => {
     const id = c.req.param("id");
-    const body = (await c.req.json()) as { status?: string };
+    const body = (await readJson(c.req.raw)) as { status?: string };
     if (body.status !== "acknowledged" && body.status !== "resolved") {
       return jsonError(400, "invalid-status");
     }
@@ -312,7 +363,7 @@ export function createApiApp(): Hono<ApiEnv> {
 
   api.patch("/users/:uid", async (c) => {
     const uid = c.req.param("uid");
-    const body = (await c.req.json()) as { active?: boolean; source?: "users" | "demoUsers" };
+    const body = (await readJson(c.req.raw)) as { active?: boolean; source?: "users" | "demoUsers" };
     if (typeof body.active !== "boolean") return jsonError(400, "missing-active");
     if (body.source !== "users" && body.source !== "demoUsers") {
       return jsonError(400, "invalid-source");
